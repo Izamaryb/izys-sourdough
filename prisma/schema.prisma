@@ -1,0 +1,193 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id                String          @id @default(cuid())
+  slug              String          @unique
+  name              String
+  description       String
+  priceCents        Int
+  image             String
+  ingredients       String          // JSON array stored as text
+  allergens         String          // JSON array stored as text
+  inventoryStatus   InventoryStatus @default(available)
+  stockQuantity     Int             @default(0)
+  isActive          Boolean         @default(true)
+  isFeatured        Boolean         @default(true)
+  isSeasonal        Boolean         @default(false)
+  seasonalStartDate DateTime?
+  seasonalEndDate   DateTime?
+  sortOrder         Int             @default(0)
+  categoryId        String?
+  category          Category?       @relation(fields: [categoryId], references: [id])
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  orderItems        OrderItem[]
+
+  @@index([isActive])
+  @@index([isFeatured])
+  @@index([categoryId])
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  sortOrder Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+
+  @@index([sortOrder])
+}
+
+enum InventoryStatus {
+  available
+  low
+  soldOut
+}
+
+model Customer {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  firstName      String
+  lastName       String
+  phone          String
+  marketingOptIn Boolean  @default(false)
+  smsOptIn       Boolean  @default(false)
+  paymentMethod  String?
+  passwordHash   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  orders         Order[]
+
+  @@index([email])
+}
+
+enum OrderStatus {
+  confirmed
+  readyForPickup
+  pickedUp
+  cancelled
+}
+
+model Order {
+  id             String       @id @default(cuid())
+  status         OrderStatus  @default(confirmed)
+  customerId     String
+  customer       Customer     @relation(fields: [customerId], references: [id])
+  bakeSessionId  String?
+  bakeSession    BakeSession? @relation(fields: [bakeSessionId], references: [id])
+  pickupDate     String
+  pickupTime     String
+  marketingOptIn Boolean      @default(false)
+  subtotalCents  Int
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  items          OrderItem[]
+  payment        Payment?
+
+  @@index([customerId])
+  @@index([bakeSessionId])
+  @@index([pickupDate, pickupTime])
+  @@index([status])
+}
+
+enum BakeSessionStatus {
+  draft
+  open
+  full
+  closed
+  completed
+}
+
+model BakeSession {
+  id            String            @id @default(cuid())
+  bakeDate      String
+  pickupDate    String
+  maxCapacity   Int
+  reservedUnits Int               @default(0)
+  status        BakeSessionStatus @default(draft)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  orders        Order[]
+
+  @@index([bakeDate])
+  @@index([pickupDate])
+  @@index([status])
+}
+
+enum PaymentMethodType {
+  cash
+  venmo
+  cashApp
+}
+
+enum PaymentStatus {
+  notRequired
+  awaitingPayment
+  paid
+  refunded
+  failed
+}
+
+model Payment {
+  id          String            @id @default(cuid())
+  orderId     String            @unique
+  order       Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  method      PaymentMethodType
+  status      PaymentStatus     @default(awaitingPayment)
+  amountCents Int
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([status])
+}
+
+model OrderItem {
+  id             String   @id @default(cuid())
+  orderId        String
+  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId      String
+  product        Product  @relation(fields: [productId], references: [id])
+  quantity       Int
+  unitPriceCents Int
+  lineTotalCents Int
+  createdAt      DateTime @default(now())
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
+}
+
+model PickupSlot {
+  id         String   @id @default(cuid())
+  date       String
+  time       String
+  capacity   Int      @default(1)
+  orderCount Int      @default(0)
+  isEnabled  Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([date, time])
+  @@index([date])
+}
