@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server';
 import { OrderStatus } from '@prisma/client';
-import { createOrder, getOrders, type CreateOrderInput } from '@/lib/orders';
+import { logError } from '@/lib/logger';
+import {
+  createOrder,
+  getOrders,
+  PreorderCutoffPassedError,
+  VacationModeActiveError,
+  type CreateOrderInput,
+} from '@/lib/orders';
+import { PickupSlotDisabledError, PickupSlotFullError } from '@/lib/pickupSlots';
 import type { PaymentMethod } from '@/types/checkout';
 
 export const dynamic = 'force-dynamic';
@@ -89,6 +97,9 @@ function validateRequestBody(body: unknown): { input: CreateOrderInput } | { err
         phone: request.customer.phone.replace(/\D/g, ''),
         marketingOptIn: Boolean(request.customer.marketingOptIn),
         smsOptIn: Boolean(request.customer.smsOptIn),
+        ...(typeof request.customer.password === 'string' && request.customer.password.trim()
+          ? { password: request.customer.password.trim() }
+          : {}),
       },
       items: request.items.map((item) => ({
         productId: item.productId.trim(),
@@ -116,7 +127,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ orders });
   } catch (error) {
-    console.error('Failed to fetch orders:', error);
+    logError('Failed to fetch orders:', error);
 
     return NextResponse.json(
       { error: 'Failed to load orders. Please try again later.' },
@@ -138,7 +149,19 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ order }, { status: 201 });
   } catch (error) {
-    console.error('Failed to create order:', error);
+    logError('Failed to create order:', error);
+
+    if (error instanceof PreorderCutoffPassedError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    if (error instanceof VacationModeActiveError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
+
+    if (error instanceof PickupSlotFullError || error instanceof PickupSlotDisabledError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
 
     const message = error instanceof Error ? error.message : 'Failed to place order.';
 

@@ -9,15 +9,18 @@
     "lint": "next lint",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma migrate reset --force",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "test:email": "tsx scripts/test-email.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.2.1",
+    "@sentry/nextjs": "^10.70.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
@@ -27,6 +30,7 @@
     "next": "^14.2.23",
     "nextjs-toploader": "^3.9.17",
     "nodemailer": "^9.0.4",
+    "pg": "^8.13.0",
     "postcss": "^8.4.49",
     "react": "^18",
     "react-dom": "^18",

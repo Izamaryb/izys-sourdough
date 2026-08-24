@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { logError } from '@/lib/logger';
 import {
   deleteProduct,
   getProductById,
@@ -28,7 +29,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
 
     return NextResponse.json({ product });
   } catch (error) {
-    console.error('Failed to fetch product:', error);
+    logError('Failed to fetch product:', error);
 
     return NextResponse.json(
       { error: 'Failed to load product. Please try again later.' },
@@ -46,7 +47,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 
     return NextResponse.json({ product });
   } catch (error) {
-    console.error('Failed to update product:', error);
+    logError('Failed to update product:', error);
 
     const message = error instanceof Error ? error.message : 'Failed to update product.';
 
@@ -62,7 +63,7 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Failed to delete product:', error);
+    logError('Failed to delete product:', error);
 
     const message = error instanceof Error ? error.message : 'Failed to delete product.';
 

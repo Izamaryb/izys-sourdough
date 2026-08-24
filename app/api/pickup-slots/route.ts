@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { logError } from '@/lib/logger';
 import { getPickupSlotsWithAvailability, upsertPickupSlotConfig } from '@/lib/pickupSlots';
 
 export const dynamic = 'force-dynamic';
@@ -16,7 +17,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ slots });
   } catch (error) {
-    console.error('Failed to fetch pickup slots:', error);
+    logError('Failed to fetch pickup slots:', error);
 
     return NextResponse.json(
       { error: 'Failed to load pickup slots. Please try again later.' },
@@ -69,7 +70,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 409 });
     }
 
-    console.error('Failed to update pickup slot:', error);
+    logError('Failed to update pickup slot:', error);
 
     return NextResponse.json(
       { error: 'Failed to update pickup slot. Please try again later.' },

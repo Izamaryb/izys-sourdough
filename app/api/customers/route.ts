@@ -1,33 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getCustomerByEmail, upsertCustomer } from '@/lib/customers';
+import { logError } from '@/lib/logger';
+import { upsertCustomer } from '@/lib/customers';
 
 export const dynamic = 'force-dynamic';
-
-export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const email = searchParams.get('email');
-
-    if (!email || !email.trim()) {
-      return NextResponse.json({ error: 'Email is required.' }, { status: 400 });
-    }
-
-    const customer = await getCustomerByEmail(email);
-
-    if (!customer) {
-      return NextResponse.json({ error: 'Customer not found.' }, { status: 404 });
-    }
-
-    return NextResponse.json({ customer });
-  } catch (error) {
-    console.error('Failed to fetch customer:', error);
-
-    return NextResponse.json(
-      { error: 'Failed to load customer. Please try again later.' },
-      { status: 500 },
-    );
-  }
-}
 
 export async function POST(request: Request) {
   try {
@@ -53,11 +28,12 @@ export async function POST(request: Request) {
       marketingOptIn: Boolean(body.marketingOptIn),
       smsOptIn: Boolean(body.smsOptIn),
       paymentMethod: body.paymentMethod || null,
+      password: typeof body.password === 'string' ? body.password : null,
     });
 
     return NextResponse.json({ customer }, { status: 201 });
   } catch (error) {
-    console.error('Failed to save customer:', error);
+    logError('Failed to save customer:', error);
 
     return NextResponse.json(
       { error: 'Failed to save customer. Please try again later.' },

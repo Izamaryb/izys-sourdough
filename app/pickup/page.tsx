@@ -9,10 +9,12 @@ import {
   PickupDateSelector,
   PickupTimeSelector,
 } from '@/components/pickup';
+import type { VacationRange } from '@/components/pickup';
 import type { PickupSlot } from '@/components/pickup/types';
 import { Button, Heading, Text } from '@/components/ui';
 import { useCart } from '@/hooks/useCart';
 import { fetchPickupSlots } from '@/lib/pickupSlotsApi';
+import { fetchVacationMode } from '@/lib/vacationModeApi';
 
 const schedulingGridClasses = 'grid gap-6';
 const schedulingPanelClasses = 'grid gap-8 rounded-lg border border-surfaceBorder bg-background-soft p-6 shadow-card';
@@ -21,10 +23,32 @@ const beforeYouOrderClasses = 'rounded-lg bg-background p-6';
 export default function PickupPage() {
   const cart = useCart();
   const { selectedPickupTime, clearPickupTime } = cart;
-  const pickupDateOptions = useMemo(() => getPickupDateOptions(), []);
+  const [vacationMode, setVacationMode] = useState<VacationRange | null>(null);
+  const pickupDateOptions = useMemo(
+    () => getPickupDateOptions(new Date(), vacationMode),
+    [vacationMode],
+  );
   const [pickupSlots, setPickupSlots] = useState<PickupSlot[]>([]);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   const [slotsError, setSlotsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    fetchVacationMode()
+      .then((vacation) => {
+        if (!isCancelled) {
+          setVacationMode(vacation);
+        }
+      })
+      .catch(() => {
+        // Non-critical: fall back to no vacation restriction in the UI if this fails.
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!cart.selectedPickupDate) {

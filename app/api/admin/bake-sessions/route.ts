@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { logError } from '@/lib/logger';
 import {
   closeBakeSession,
   createBakeSession,
@@ -15,7 +16,7 @@ export async function GET() {
 
     return NextResponse.json({ sessions });
   } catch (error) {
-    console.error('Failed to fetch bake sessions:', error);
+    logError('Failed to fetch bake sessions:', error);
 
     return NextResponse.json(
       { error: 'Failed to load bake sessions. Please try again later.' },
@@ -59,7 +60,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ session }, { status: 201 });
   } catch (error) {
-    console.error('Failed to create bake session:', error);
+    logError('Failed to create bake session:', error);
 
     const message = error instanceof Error ? error.message : 'Failed to create bake session.';
 
@@ -91,7 +92,7 @@ export async function PATCH(request: Request) {
       { status: 400 },
     );
   } catch (error) {
-    console.error('Failed to update bake session:', error);
+    logError('Failed to update bake session:', error);
 
     if (error instanceof Error && error.message.startsWith('Capacity cannot be lower')) {
       return NextResponse.json({ error: error.message }, { status: 409 });

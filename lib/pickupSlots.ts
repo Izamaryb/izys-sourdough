@@ -1,4 +1,5 @@
 import { prisma } from './prisma';
+import { isVacationModeActive } from './settings';
 
 const START_HOUR = 16;
 const SLOT_COUNT = 20;
@@ -9,6 +10,20 @@ type PrismaTransaction = Omit<
   typeof prisma,
   '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
 >;
+
+export class PickupSlotFullError extends Error {
+  constructor(timeValue: string) {
+    super(`Pickup slot ${timeValue} is fully reserved.`);
+    this.name = 'PickupSlotFullError';
+  }
+}
+
+export class PickupSlotDisabledError extends Error {
+  constructor(timeValue: string) {
+    super(`Pickup slot ${timeValue} is not available.`);
+    this.name = 'PickupSlotDisabledError';
+  }
+}
 
 export type PickupSlotAvailability = {
   value: string;
@@ -30,9 +45,10 @@ function formatPickupTimeLabel(totalMinutes: number): string {
 export async function getPickupSlotsWithAvailability(
   dateValue: string,
 ): Promise<PickupSlotAvailability[]> {
-  const slotRecords = await prisma.pickupSlot.findMany({
-    where: { date: dateValue },
-  });
+  const [slotRecords, isOnVacation] = await Promise.all([
+    prisma.pickupSlot.findMany({ where: { date: dateValue } }),
+    isVacationModeActive(dateValue),
+  ]);
 
   const recordsByTime = new Map(slotRecords.map((record) => [record.time, record]));
 
@@ -47,7 +63,7 @@ export async function getPickupSlotsWithAvailability(
     return {
       value: label,
       label,
-      reserved: !isEnabled || orderCount >= capacity,
+      reserved: isOnVacation || !isEnabled || orderCount >= capacity,
       capacity,
       orderCount,
       isEnabled,
@@ -106,6 +122,10 @@ export async function reservePickupSlot(
   timeValue: string,
   tx: PrismaTransaction = prisma,
 ): Promise<void> {
+  if (await isVacationModeActive(dateValue)) {
+    throw new Error(`Pickup slot ${timeValue} is not available because the bakery is on vacation.`);
+  }
+
   const existingSlot = await tx.pickupSlot.findUnique({
     where: {
       date_time: {
@@ -117,17 +137,20 @@ export async function reservePickupSlot(
 
   if (existingSlot) {
     if (!existingSlot.isEnabled) {
-      throw new Error(`Pickup slot ${timeValue} is not available.`);
+      throw new PickupSlotDisabledError(timeValue);
     }
 
-    if (existingSlot.orderCount >= existingSlot.capacity) {
-      throw new Error(`Pickup slot ${timeValue} is fully reserved.`);
-    }
-
-    await tx.pickupSlot.update({
-      where: { id: existingSlot.id },
+    const result = await tx.pickupSlot.updateMany({
+      where: {
+        id: existingSlot.id,
+        orderCount: { lt: existingSlot.capacity },
+      },
       data: { orderCount: { increment: 1 } },
     });
+
+    if (result.count === 0) {
+      throw new PickupSlotFullError(timeValue);
+    }
 
     return;
   }

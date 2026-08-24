@@ -21,7 +21,6 @@ and ensures a smooth pickup experience.
 * Bake Day: Tuesday
 * Pickup Day: Wednesday
 * Order Cutoff: 48 hours before pickup
-* Edit/Cancel Window: up to 36 hours before pickup
 * Inventory: fixed per bake (e.g., 10 loaves total)
 * Customers can order multiple loaves per order
 * Pickup slots limit **people**, not loaves

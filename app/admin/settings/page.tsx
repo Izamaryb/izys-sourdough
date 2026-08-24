@@ -48,8 +48,7 @@ export default function AdminSettingsPage() {
     loadSettings();
   }, []);
 
-  async function handleSave(event: React.FormEvent) {
-    event.preventDefault();
+  async function saveSettings(nextVacationMode: VacationModeSetting) {
     setIsSaving(true);
     setSuccess(false);
 
@@ -57,7 +56,7 @@ export default function AdminSettingsPage() {
       const response = await fetch('/api/admin/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paymentMethods, vacationMode }),
+        body: JSON.stringify({ paymentMethods, vacationMode: nextVacationMode }),
       });
 
       if (!response.ok) {
@@ -72,6 +71,27 @@ export default function AdminSettingsPage() {
     } finally {
       setIsSaving(false);
     }
+  }
+
+  async function handleSave(event: React.FormEvent) {
+    event.preventDefault();
+    await saveSettings(vacationMode);
+  }
+
+  function handleVacationEnabledChange(checked: boolean) {
+    if (checked) {
+      setVacationMode((prev) => ({ ...prev, enabled: true }));
+      return;
+    }
+
+    const resetVacationMode: VacationModeSetting = {
+      enabled: false,
+      startDate: null,
+      endDate: null,
+    };
+
+    setVacationMode(resetVacationMode);
+    void saveSettings(resetVacationMode);
   }
 
   return (
@@ -122,9 +142,7 @@ export default function AdminSettingsPage() {
               <input
                 type="checkbox"
                 checked={vacationMode.enabled}
-                onChange={(e) =>
-                  setVacationMode((prev) => ({ ...prev, enabled: e.target.checked }))
-                }
+                onChange={(e) => handleVacationEnabledChange(e.target.checked)}
                 className="h-5 w-5 accent-button"
               />
               Enable vacation mode

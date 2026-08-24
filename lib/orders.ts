@@ -1,5 +1,6 @@
 import { InventoryStatus, OrderStatus, PaymentMethodType, PaymentStatus } from '@prisma/client';
 import { prisma } from './prisma';
+import { hashPassword } from './passwords';
 import { releasePickupSlot, reservePickupSlot } from './pickupSlots';
 import { sendOrderConfirmation, sendOrderStatusUpdate } from './notifications';
 import {
@@ -7,6 +8,7 @@ import {
   releaseBakeSessionCapacity,
   reserveBakeSessionCapacity,
 } from './bakeSessions';
+import { isVacationModeActive } from './settings';
 import type { PaymentMethod } from '@/types/checkout';
 
 function toPrismaPaymentMethod(method: PaymentMethod): PaymentMethodType {
@@ -43,6 +45,7 @@ export type CreateOrderInput = {
     phone: string;
     marketingOptIn?: boolean;
     smsOptIn?: boolean;
+    password?: string;
   };
   items: OrderItemInput[];
   pickupDate: string;
@@ -88,9 +91,87 @@ function normalizePhone(phone: string): string {
   return phone.replace(/\D/g, '');
 }
 
+const PREORDER_CUTOFF_HOURS = 48;
+const BAKERY_TIME_ZONE = 'America/New_York';
+
+export class PreorderCutoffPassedError extends Error {
+  constructor(pickupDate: string) {
+    super(`The ${PREORDER_CUTOFF_HOURS}-hour preorder cutoff has passed for ${pickupDate}.`);
+    this.name = 'PreorderCutoffPassedError';
+  }
+}
+
+export class VacationModeActiveError extends Error {
+  constructor(pickupDate: string) {
+    super(`Preorders are closed for ${pickupDate} because the bakery is on vacation.`);
+    this.name = 'VacationModeActiveError';
+  }
+}
+
+function getTimeZoneOffsetMinutes(date: Date, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).formatToParts(date);
+
+  const values: Record<string, string> = {};
+  for (const part of parts) {
+    values[part.type] = part.value;
+  }
+
+  const localTime = Date.UTC(
+    Number(values.year),
+    Number(values.month) - 1,
+    Number(values.day),
+    Number(values.hour),
+    Number(values.minute),
+    Number(values.second),
+  );
+
+  return (date.getTime() - localTime) / 60000;
+}
+
+function getStartOfDayTimestampInTimeZone(dateString: string, timeZone: string): number | null {
+  const match = dateString.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) {
+    return null;
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const targetUtc = Date.UTC(year, month - 1, day, 0, 0, 0);
+  const offsetMinutes = getTimeZoneOffsetMinutes(new Date(targetUtc), timeZone);
+  return targetUtc + offsetMinutes * 60000;
+}
+
+export function isBeforePickupCutoff(pickupDate: string, now = new Date()): boolean {
+  const startOfDay = getStartOfDayTimestampInTimeZone(pickupDate, BAKERY_TIME_ZONE);
+  if (startOfDay === null) {
+    return false;
+  }
+
+  const cutoffTime = startOfDay - PREORDER_CUTOFF_HOURS * 60 * 60 * 1000;
+  return now.getTime() <= cutoffTime;
+}
+
 export async function createOrder(input: CreateOrderInput): Promise<OrderConfirmation> {
   const { customer, items, pickupDate, pickupTime, paymentMethod } = input;
   const normalizedEmail = customer.email.toLowerCase().trim();
+
+  if (!isBeforePickupCutoff(pickupDate)) {
+    throw new PreorderCutoffPassedError(pickupDate);
+  }
+
+  if (await isVacationModeActive(pickupDate)) {
+    throw new VacationModeActiveError(pickupDate);
+  }
 
   const confirmation = await prisma.$transaction(async (tx: PrismaTransaction) => {
     const slugs = items.map((item) => item.productId);
@@ -143,6 +224,10 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderConfirm
     await reservePickupSlot(pickupDate, pickupTime, tx);
     await reserveBakeSessionCapacity(bakeSession.id, productionUnits, tx);
 
+    const passwordHash = customer.password?.trim()
+      ? await hashPassword(customer.password.trim())
+      : undefined;
+
     const dbCustomer = await tx.customer.upsert({
       where: { email: normalizedEmail },
       create: {
@@ -153,6 +238,7 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderConfirm
         marketingOptIn: customer.marketingOptIn ?? false,
         smsOptIn: customer.smsOptIn ?? false,
         paymentMethod,
+        passwordHash: passwordHash ?? null,
       },
       update: {
         firstName: customer.firstName.trim(),
@@ -161,6 +247,7 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderConfirm
         marketingOptIn: customer.marketingOptIn ?? false,
         smsOptIn: customer.smsOptIn ?? false,
         paymentMethod,
+        ...(passwordHash ? { passwordHash } : {}),
       },
     });
 

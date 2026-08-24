@@ -18,7 +18,7 @@ export function InputField({
   const errorId = error && inputId ? `${inputId}-error` : undefined;
 
   return (
-    <div className="grid gap-2">
+    <div className="grid gap-2" data-field-error={error ? 'true' : undefined}>
       <label htmlFor={inputId} className="font-body text-small font-medium text-primary">
         {label}
         {required ? <span aria-hidden="true"> *</span> : null}

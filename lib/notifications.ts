@@ -1,5 +1,5 @@
 import type { OrderConfirmation } from './orders';
-import { sendOrderConfirmationEmail } from './email';
+import { sendAdminNewOrderEmail, sendOrderConfirmationEmail } from './email';
 import {
   buildOrderConfirmationSms,
   buildOrderStatusUpdateSms,
@@ -45,11 +45,10 @@ function mapOrderToSmsInfo(order: OrderConfirmation): SmsOrderInfo {
 }
 
 /**
- * Placeholder for admin notifications when a new order is received.
- *
- * Future integrations (push notifications, Home Assistant webhook, etc.) can
- * be wired in here without changing callers. The function is async and
- * non-throwing so notification failures do not block order creation.
+ * Sends a new-order alert to the baker's own inbox via email. Configured via
+ * ADMIN_NOTIFICATION_EMAIL (see .env.example). Falls back to a console log
+ * if unset. The function is async and non-throwing so notification failures
+ * do not block order creation.
  */
 export async function sendAdminNotification(order: OrderConfirmation): Promise<void> {
   const event: AdminNotificationEvent = {
@@ -62,6 +61,8 @@ export async function sendAdminNotification(order: OrderConfirmation): Promise<v
   };
 
   console.log('[notification] Admin notification event:', JSON.stringify(event));
+
+  await sendAdminNewOrderEmail(order);
 }
 
 /**

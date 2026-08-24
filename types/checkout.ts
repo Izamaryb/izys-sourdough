@@ -22,6 +22,8 @@ export type CheckoutFormState = {
   paymentMethod: PaymentMethod | '';
   optIns: CheckoutOptIns;
   createAccount: boolean;
+  accountPassword: string;
+  confirmAccountPassword: string;
 };
 
 export type CheckoutValidationInput = CheckoutFormState & {

@@ -1,5 +1,11 @@
 import type { PickupDateOption, PickupSlot } from './types';
 
+export type VacationRange = {
+  enabled: boolean;
+  startDate: string | null;
+  endDate: string | null;
+};
+
 const WEDNESDAY = 3;
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const blackoutDates = new Set(['2026-12-24']);
@@ -7,6 +13,22 @@ const reservedSlotsByDate: Record<string, string[]> = {
   '2026-06-17': ['4:30 PM', '5:15 PM'],
   '2026-06-24': ['4:00 PM'],
 };
+
+function isDateInVacationRange(dateValue: string, vacation?: VacationRange | null): boolean {
+  if (!vacation?.enabled) {
+    return false;
+  }
+
+  if (vacation.startDate && dateValue < vacation.startDate) {
+    return false;
+  }
+
+  if (vacation.endDate && dateValue > vacation.endDate) {
+    return false;
+  }
+
+  return true;
+}
 
 function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -36,13 +58,21 @@ function getNextWednesday(fromDate: Date) {
   return date;
 }
 
-function getDateStatus(date: Date, today: Date): PickupDateOption['status'] {
+function getDateStatus(
+  date: Date,
+  today: Date,
+  vacation?: VacationRange | null,
+): PickupDateOption['status'] {
   const dateValue = formatDateValue(date);
   const pickupStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0);
   const cutoffTime = new Date(pickupStart.getTime() - 48 * 60 * 60 * 1000);
 
   if (startOfDay(date).getTime() < startOfDay(today).getTime()) {
     return 'past';
+  }
+
+  if (isDateInVacationRange(dateValue, vacation)) {
+    return 'vacation';
   }
 
   if (blackoutDates.has(dateValue)) {
@@ -61,6 +91,10 @@ function getHelperText(status: PickupDateOption['status']) {
     return 'Available for preorder';
   }
 
+  if (status === 'vacation') {
+    return 'Bakery is on vacation this week';
+  }
+
   if (status === 'blackout') {
     return 'Unavailable this week';
   }
@@ -72,13 +106,16 @@ function getHelperText(status: PickupDateOption['status']) {
   return 'Past pickup date';
 }
 
-export function getPickupDateOptions(today = new Date()): PickupDateOption[] {
+export function getPickupDateOptions(
+  today = new Date(),
+  vacation?: VacationRange | null,
+): PickupDateOption[] {
   const firstWednesday = getNextWednesday(today);
 
   return Array.from({ length: 5 }, (_, index) => {
     const date = new Date(firstWednesday);
     date.setDate(firstWednesday.getDate() + index * 7);
-    const status = getDateStatus(date, today);
+    const status = getDateStatus(date, today, vacation);
 
     return {
       date,

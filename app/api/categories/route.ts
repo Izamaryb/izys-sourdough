@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { logError } from '@/lib/logger';
 import { createCategory, getCategories } from '@/lib/categories';
 
 export const dynamic = 'force-dynamic';
@@ -9,7 +10,7 @@ export async function GET() {
 
     return NextResponse.json({ categories });
   } catch (error) {
-    console.error('Failed to fetch categories:', error);
+    logError('Failed to fetch categories:', error);
 
     return NextResponse.json(
       { error: 'Failed to load categories. Please try again later.' },
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ category }, { status: 201 });
   } catch (error) {
-    console.error('Failed to create category:', error);
+    logError('Failed to create category:', error);
 
     const message = error instanceof Error ? error.message : 'Failed to create category.';
 

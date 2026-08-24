@@ -39,13 +39,13 @@ export function PickupSummary({ items, subtotal, selectedDateLabel, selectedTime
               <p className={itemTextClasses}>{item.name}</p>
               <p className={metaClasses}>Quantity: {item.quantity}</p>
             </div>
-            <p className={itemTextClasses}>${item.lineTotal}</p>
+            <p className={itemTextClasses}>${item.lineTotal.toFixed(2)}</p>
           </div>
         ))}
       </div>
       <div className={totalClasses}>
         <span>Estimated subtotal</span>
-        <span>${subtotal}</span>
+        <span>${subtotal.toFixed(2)}</span>
       </div>
       <div className={pickupGridClasses}>
         <div className={pickupBoxClasses}>

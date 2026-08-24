@@ -229,6 +229,74 @@ Thanks for supporting Izy's Sourdough!
   return { subject, text, html };
 }
 
+function buildAdminNewOrderEmail(order: OrderConfirmation) {
+  const pickupDate = formatPickupDate(order.pickupDate);
+  const paymentMethod = paymentMethodLabels[order.paymentMethod] ?? order.paymentMethod;
+  const itemsText = order.items
+    .map((item) => `${item.quantity}x ${item.name} — ${formatCurrency(item.lineTotal)}`)
+    .join('\n');
+
+  const subject = `New order #${orderNumber(order)} — ${order.customerName}`;
+
+  const text = `New order received!
+
+Order number: ${orderNumber(order)}
+Customer: ${order.customerName}
+Phone: ${order.phone}
+Email: ${order.email || 'n/a'}
+
+Items:
+${itemsText}
+
+Subtotal: ${formatCurrency(order.subtotal)}
+
+Pickup
+Date: ${pickupDate}
+Time: ${order.pickupTime}
+Payment method: ${paymentMethod}
+`;
+
+  return { subject, text };
+}
+
+/**
+ * Sends a new-order alert to the baker's own inbox using the existing SMTP
+ * transport. Configured via ADMIN_NOTIFICATION_EMAIL. Non-throwing so
+ * failures never block order creation.
+ */
+export async function sendAdminNewOrderEmail(order: OrderConfirmation): Promise<void> {
+  const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
+
+  if (!adminEmail) {
+    console.log('[email] ADMIN_NOTIFICATION_EMAIL not set. Skipping admin new-order email.');
+    return;
+  }
+
+  const config = getEmailConfig();
+  const transport = getTransport(config);
+  const { subject, text } = buildAdminNewOrderEmail(order);
+  const from = `${config.fromName || "Izy's Sourdough"} <${config.from}>`;
+
+  if (!transport) {
+    console.log('[email] SMTP not configured. Admin new-order email would be sent to:', adminEmail);
+    console.log('[email] Subject:', subject);
+    console.log('[email] Text:\n', text);
+    return;
+  }
+
+  try {
+    await transport.sendMail({
+      from,
+      to: adminEmail,
+      subject,
+      text,
+    });
+    console.log('[email] Admin new-order email sent to:', adminEmail);
+  } catch (error) {
+    console.error('[email] Failed to send admin new-order email:', error);
+  }
+}
+
 export async function sendOrderConfirmationEmail(order: OrderConfirmation): Promise<void> {
   if (!order.email) {
     console.warn('[email] No customer email provided. Skipping order confirmation email.');
@@ -241,6 +309,13 @@ export async function sendOrderConfirmationEmail(order: OrderConfirmation): Prom
   const from = `${config.fromName || "Izy's Sourdough"} <${config.from}>`;
 
   if (!transport) {
+    if (process.env.NODE_ENV === 'production') {
+      console.error(
+        '[email] SMTP is not configured in production. Order confirmation emails are NOT being sent. ' +
+          'Set SMTP_HOST, SMTP_USER, SMTP_PASSWORD, and EMAIL_FROM in your hosting provider secrets. ' +
+          'See .env.example for setup instructions.',
+      );
+    }
     console.log('[email] SMTP not configured. Order confirmation email would be sent to:', order.email);
     console.log('[email] From:', from);
     console.log('[email] Subject:', subject);

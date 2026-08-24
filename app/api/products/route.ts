@@ -1,15 +1,17 @@
-import { NextResponse } from 'next/server';
-import { createProduct, getActiveProducts, type ProductInput } from '@/lib/products';
+import { NextRequest, NextResponse } from 'next/server';
+import { logError } from '@/lib/logger';
+import { createProduct, getActiveProducts, getFeaturedProducts, type ProductInput } from '@/lib/products';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const products = await getActiveProducts();
+    const featured = request.nextUrl.searchParams.get('featured');
+    const products = featured === 'true' ? await getFeaturedProducts() : await getActiveProducts();
 
     return NextResponse.json({ products });
   } catch (error) {
-    console.error('Failed to fetch products:', error);
+    logError('Failed to fetch products:', error);
 
     return NextResponse.json(
       { error: 'Failed to load products. Please try again later.' },
@@ -57,7 +59,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ product }, { status: 201 });
   } catch (error) {
-    console.error('Failed to create product:', error);
+    logError('Failed to create product:', error);
 
     const message = error instanceof Error ? error.message : 'Failed to create product.';
 

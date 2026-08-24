@@ -37,6 +37,8 @@ export function readStoredCheckoutForm(): CheckoutFormState | null {
         smsOptIn: Boolean(parsed.optIns?.smsOptIn),
       },
       createAccount: Boolean(parsed.createAccount),
+      accountPassword: String(parsed.accountPassword ?? ''),
+      confirmAccountPassword: String(parsed.confirmAccountPassword ?? ''),
     };
   } catch {
     return null;

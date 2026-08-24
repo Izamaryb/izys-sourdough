@@ -23,6 +23,7 @@ export default function CheckoutAuthPage() {
   const router = useRouter();
   const cart = useCart();
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -65,16 +66,23 @@ export default function CheckoutAuthPage() {
       return;
     }
 
+    if (!password) {
+      setError('Please enter your password.');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const response = await fetch(`/api/customers?email=${encodeURIComponent(normalizedEmail)}`);
+      const response = await fetch('/api/customers/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: normalizedEmail, password }),
+      });
 
       if (!response.ok) {
-        if (response.status === 404) {
-          setError(
-            'We could not find a saved account for that email. Continue as guest or check your email address.',
-          );
+        if (response.status === 401 || response.status === 404) {
+          setError('Invalid email or password.');
           return;
         }
 
@@ -86,7 +94,7 @@ export default function CheckoutAuthPage() {
       const customer = data.customer;
 
       if (!customer) {
-        setError('We could not find a saved account for that email. Continue as guest or check your email address.');
+        setError('Invalid email or password.');
         return;
       }
 
@@ -115,8 +123,8 @@ export default function CheckoutAuthPage() {
             Welcome Back
           </Heading>
           <Text className="text-primary/90">
-            Sign in with your email for a faster checkout, or continue as guest. New here? You
-            can create an account too.
+            Sign in with your email and password for a faster checkout, or continue as guest. New
+            here? You can create an account too.
           </Text>
         </div>
       </SectionContainer>
@@ -135,6 +143,19 @@ export default function CheckoutAuthPage() {
             value={email}
             onChange={(event) => {
               setEmail(event.target.value);
+              if (error) setError(null);
+            }}
+            error={error ?? undefined}
+            required
+          />
+          <InputField
+            label="Password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => {
+              setPassword(event.target.value);
               if (error) setError(null);
             }}
             error={error ?? undefined}

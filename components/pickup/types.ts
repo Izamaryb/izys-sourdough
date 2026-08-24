@@ -2,7 +2,7 @@ export type PickupDateOption = {
   date: Date;
   value: string;
   label: string;
-  status: 'available' | 'cutoff' | 'blackout' | 'past';
+  status: 'available' | 'cutoff' | 'blackout' | 'past' | 'vacation';
   helperText: string;
 };
 

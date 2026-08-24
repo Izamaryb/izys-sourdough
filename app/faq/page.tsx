@@ -28,10 +28,6 @@ const faqItems = [
     answer: 'Once weekly inventory is sold out, ordering closes until the next pickup week.',
   },
   {
-    question: 'Can I edit or cancel my order?',
-    answer: 'Orders may be edited or canceled up to 36 hours before pickup.',
-  },
-  {
     question: 'How should I store my sourdough?',
     answer: 'Store bread at room temperature in a bread bag or wrapped in a towel. For longer storage, slice and freeze.',
   },

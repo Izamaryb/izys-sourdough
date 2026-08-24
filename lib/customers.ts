@@ -1,6 +1,7 @@
 import { prisma } from './prisma';
 import type { Customer } from '@prisma/client';
 import type { PaymentMethod } from '@/types/checkout';
+import { hashPassword, verifyPassword } from './passwords';
 
 const validPaymentMethods: PaymentMethod[] = ['venmo', 'cash-app', 'cash'];
 
@@ -48,8 +49,12 @@ export async function upsertCustomer(input: {
   marketingOptIn?: boolean;
   smsOptIn?: boolean;
   paymentMethod?: string | null;
+  password?: string | null;
 }): Promise<CustomerAccount> {
   const email = input.email.toLowerCase().trim();
+  const passwordHash = input.password?.trim()
+    ? await hashPassword(input.password.trim())
+    : undefined;
 
   const customer = await prisma.customer.upsert({
     where: { email },
@@ -60,6 +65,7 @@ export async function upsertCustomer(input: {
       marketingOptIn: input.marketingOptIn ?? false,
       smsOptIn: input.smsOptIn ?? false,
       paymentMethod: input.paymentMethod ?? null,
+      ...(passwordHash ? { passwordHash } : {}),
     },
     create: {
       email,
@@ -69,8 +75,30 @@ export async function upsertCustomer(input: {
       marketingOptIn: input.marketingOptIn ?? false,
       smsOptIn: input.smsOptIn ?? false,
       paymentMethod: input.paymentMethod ?? null,
+      passwordHash: passwordHash ?? null,
     },
   });
+
+  return mapCustomerToAccount(customer);
+}
+
+export async function verifyCustomerCredentials(
+  email: string,
+  password: string,
+): Promise<CustomerAccount | null> {
+  const customer = await prisma.customer.findUnique({
+    where: { email: email.toLowerCase().trim() },
+  });
+
+  if (!customer || !customer.passwordHash) {
+    return null;
+  }
+
+  const isValid = await verifyPassword(password, customer.passwordHash);
+
+  if (!isValid) {
+    return null;
+  }
 
   return mapCustomerToAccount(customer);
 }

@@ -10,12 +10,12 @@ import { validateCheckout } from '@/lib/checkoutValidation';
 import { classNames } from '@/lib/classNames';
 import {
   CHECKOUT_FORM_STORAGE_KEY,
-  clearStoredAccountCustomer,
   readStoredAccountCustomer,
-  readStoredAccountEmail,
   readStoredCheckoutForm,
   saveStoredAccountCustomer,
 } from '@/lib/checkoutStorage';
+import { fetchPickupSlots } from '@/lib/pickupSlotsApi';
+import { fetchProducts } from '@/lib/productsApi';
 import { useCart } from '@/hooks/useCart';
 import type { CheckoutCustomer, CheckoutFormState, PaymentMethod } from '@/types/checkout';
 
@@ -32,6 +32,8 @@ const initialFormState: CheckoutFormState = {
     smsOptIn: false,
   },
   createAccount: false,
+  accountPassword: '',
+  confirmAccountPassword: '',
 };
 
 const paymentOptions: { value: PaymentMethod; label: string; helper: string }[] = [
@@ -83,6 +85,8 @@ export default function CheckoutPage() {
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [availabilityError, setAvailabilityError] = useState<string | null>(null);
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
   const [storedAccount, setStoredAccount] = useState<CheckoutCustomer | null>(null);
   const canPersistRef = useRef(false);
   const hasLoadedRef = useRef(false);
@@ -154,71 +158,65 @@ export default function CheckoutPage() {
   }, [cart.hasItems]);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !hasLoadedRef.current) {
+    const pickupDate = cart.selectedPickupDate;
+    const pickupTime = cart.selectedPickupTime;
+
+    if (!cart.hasItems || !pickupDate || !pickupTime) {
+      setAvailabilityError(null);
       return;
     }
 
-    if (new URLSearchParams(window.location.search).get('guest') === '1') {
-      return;
-    }
-
-    const storedEmail = readStoredAccountEmail();
-
-    if (!storedEmail) {
-      return;
-    }
-
-    const email = storedEmail;
     let cancelled = false;
 
-    async function loadCustomer() {
+    async function checkAvailability() {
+      setIsCheckingAvailability(true);
+      setAvailabilityError(null);
+
       try {
-        const response = await fetch(`/api/customers?email=${encodeURIComponent(email)}`);
+        const [products, slots] = await Promise.all([
+          fetchProducts(),
+          fetchPickupSlots(pickupDate as string),
+        ]);
 
-        if (!response.ok) {
-          if (response.status === 404) {
-            clearStoredAccountCustomer();
+        if (cancelled) {
+          return;
+        }
+
+        for (const item of cart.items) {
+          const product = products.find((p) => p.slug === item.id);
+          const availableStock = product?.stockQuantity ?? 0;
+
+          if (!product || availableStock < item.quantity) {
+            setAvailabilityError(
+              `Not enough inventory for ${item.name}. Only ${availableStock} left. Please update your cart.`,
+            );
+            return;
           }
-
-          return;
         }
 
-        const data = await response.json();
-        const customer = data.customer;
+        const selectedSlot = slots.find((slot) => slot.value === cart.selectedPickupTime);
 
-        if (!customer || cancelled) {
+        if (!selectedSlot || selectedSlot.reserved) {
+          setAvailabilityError(
+            'The selected pickup time is no longer available. Please choose another time.',
+          );
           return;
         }
-
-        saveStoredAccountCustomer(customer);
-
-        setFormState((current) => ({
-          ...current,
-          customer: {
-            firstName: customer.firstName,
-            lastName: customer.lastName,
-            email: customer.email,
-            phone: formatPhoneNumber(customer.phone),
-          },
-          paymentMethod: customer.paymentMethod || current.paymentMethod,
-          optIns: {
-            ...current.optIns,
-            marketingOptIn: customer.marketingOptIn,
-            smsOptIn: customer.smsOptIn ?? current.optIns.smsOptIn,
-          },
-          createAccount: true,
-        }));
-      } catch (error) {
-        console.error('Failed to load customer account:', error);
+      } catch {
+        // Don't block checkout if availability check fails; the backend is the source of truth.
+      } finally {
+        if (!cancelled) {
+          setIsCheckingAvailability(false);
+        }
       }
     }
 
-    loadCustomer();
+    checkAvailability();
 
     return () => {
       cancelled = true;
     };
-  }, [cart.hasItems]);
+  }, [cart.hasItems, cart.items, cart.selectedPickupDate, cart.selectedPickupTime]);
 
   const validation = useMemo(
     () =>
@@ -247,7 +245,7 @@ export default function CheckoutPage() {
       cart.items.map((item) => ({
         name: item.name,
         quantity: item.quantity,
-        lineTotal: item.quantity * item.price,
+        lineTotal: Number((item.quantity * item.price).toFixed(2)),
       })),
     [cart.items],
   );
@@ -290,12 +288,52 @@ export default function CheckoutPage() {
     }));
   }
 
+  function updateAccountPassword(event: ChangeEvent<HTMLInputElement>) {
+    setFormState((current) => ({
+      ...current,
+      accountPassword: event.target.value,
+    }));
+  }
+
+  function updateConfirmAccountPassword(event: ChangeEvent<HTMLInputElement>) {
+    setFormState((current) => ({
+      ...current,
+      confirmAccountPassword: event.target.value,
+    }));
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setHasSubmitted(true);
     setSubmitError(null);
 
     if (!validation.isValid || !formState.paymentMethod || !cart.pickupDate || !cart.pickupTime) {
+      requestAnimationFrame(() => {
+        const firstError = document.querySelector('[data-field-error="true"]');
+        firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+      return;
+    }
+
+    if (availabilityError || isCheckingAvailability) {
+      return;
+    }
+
+    if (
+      formState.createAccount &&
+      !storedAccount &&
+      formState.accountPassword.trim().length < 8
+    ) {
+      setSubmitError('Please create a password with at least 8 characters.');
+      return;
+    }
+
+    if (
+      formState.createAccount &&
+      !storedAccount &&
+      formState.accountPassword.trim() !== formState.confirmAccountPassword.trim()
+    ) {
+      setSubmitError('Passwords do not match.');
       return;
     }
 
@@ -313,6 +351,9 @@ export default function CheckoutPage() {
             phone: formState.customer.phone.replace(/\D/g, ''),
             marketingOptIn: formState.optIns.marketingOptIn,
             smsOptIn: formState.optIns.smsOptIn,
+            ...(formState.createAccount && formState.accountPassword.trim()
+              ? { password: formState.accountPassword.trim() }
+              : {}),
           },
           items: cart.items.map((item) => ({ productId: item.id, quantity: item.quantity })),
           pickupDate: cart.pickupDate,
@@ -450,6 +491,32 @@ export default function CheckoutPage() {
                     <span>Save my information and create an account for faster checkout next time.</span>
                   </label>
                 ) : null}
+                {formState.createAccount && !storedAccount ? (
+                  <>
+                    <div className="sm:col-span-2">
+                      <InputField
+                        label="Create Password"
+                        name="accountPassword"
+                        type="password"
+                        autoComplete="new-password"
+                        value={formState.accountPassword}
+                        onChange={updateAccountPassword}
+                        required
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <InputField
+                        label="Confirm Password"
+                        name="confirmAccountPassword"
+                        type="password"
+                        autoComplete="new-password"
+                        value={formState.confirmAccountPassword}
+                        onChange={updateConfirmAccountPassword}
+                        required
+                      />
+                    </div>
+                  </>
+                ) : null}
                 {!(storedAccount?.marketingOptIn) ? (
                   <label className="flex gap-3 font-body text-small text-primary sm:col-span-2">
                     <input
@@ -506,7 +573,14 @@ export default function CheckoutPage() {
                 </div>
                 <div className={detailBoxClasses}>
                   <p className={labelClasses}>Pickup Day</p>
-                  <p className={valueClasses}>Wednesday</p>
+                  <p className={valueClasses}>
+                    {cart.selectedPickupDate
+                      ? new Date(`${cart.selectedPickupDate}T12:00:00`).toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          timeZone: 'America/New_York',
+                        })
+                      : 'Not selected'}
+                  </p>
                 </div>
                 <div className={detailBoxClasses}>
                   <p className={labelClasses}>Pickup Date</p>
@@ -522,11 +596,11 @@ export default function CheckoutPage() {
                 </div>
                 <div className={detailBoxClasses}>
                   <p className={labelClasses}>Location</p>
-                  <p className={valueClasses}>Provided after order confirmation</p>
+                  <p className={valueClasses}>7191 Boxer Round Pl, Zephyrhills, FL 33541</p>
                 </div>
               </div>
               <Text size="small" className="mt-4 text-primary/90">
-                Order changes are allowed until 36 hours before pickup. Preorders close 48 hours before pickup.
+                Preorders close 48 hours before pickup.
               </Text>
             </section>
           </div>
@@ -576,7 +650,12 @@ export default function CheckoutPage() {
 
             <section className={cardClasses} aria-label="Place order">
               {submitError ? <p className={errorClasses}>{submitError}</p> : null}
-              <Button fullWidth type="submit" disabled={!validation.isValid || isSubmitting}>
+              {availabilityError ? <p className={errorClasses}>{availabilityError}</p> : null}
+              <Button
+                fullWidth
+                type="submit"
+                disabled={isSubmitting || isCheckingAvailability}
+              >
                 {isSubmitting ? 'Placing Order...' : 'Place Order'}
               </Button>
               <Text size="small" className="mt-4 text-primary/90">

@@ -138,6 +138,18 @@ export async function getProductById(id: string): Promise<ProductCatalogItem | n
   return product ? mapProductToCatalogItem(product) : null;
 }
 
+function deriveInventoryStatus(stockQuantity: number): Product['inventoryStatus'] {
+  if (stockQuantity <= 0) {
+    return 'soldOut';
+  }
+
+  if (stockQuantity <= 8) {
+    return 'low';
+  }
+
+  return 'available';
+}
+
 function toSeasonalDate(value: string | null | undefined): Date | null {
   if (!value) {
     return null;
@@ -159,6 +171,7 @@ export async function createProduct(input: ProductInput): Promise<ProductCatalog
       ingredients: JSON.stringify(input.ingredients),
       allergens: JSON.stringify(input.allergens),
       stockQuantity: input.stockQuantity,
+      inventoryStatus: deriveInventoryStatus(input.stockQuantity),
       isActive: input.isActive ?? true,
       isFeatured: input.isFeatured ?? false,
       isSeasonal: input.isSeasonal ?? false,
@@ -189,7 +202,9 @@ export async function updateProduct(
         ? { ingredients: JSON.stringify(input.ingredients) }
         : {}),
       ...(input.allergens !== undefined ? { allergens: JSON.stringify(input.allergens) } : {}),
-      ...(input.stockQuantity !== undefined ? { stockQuantity: input.stockQuantity } : {}),
+      ...(input.stockQuantity !== undefined
+        ? { stockQuantity: input.stockQuantity, inventoryStatus: deriveInventoryStatus(input.stockQuantity) }
+        : {}),
       ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
       ...(input.isFeatured !== undefined ? { isFeatured: input.isFeatured } : {}),
       ...(input.isSeasonal !== undefined ? { isSeasonal: input.isSeasonal } : {}),

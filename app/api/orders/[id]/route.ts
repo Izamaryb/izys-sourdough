@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { OrderStatus, PaymentStatus } from '@prisma/client';
+import { logError } from '@/lib/logger';
 import {
   getOrderById,
   InvalidOrderStatusTransitionError,
@@ -28,7 +29,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
 
     return NextResponse.json({ order });
   } catch (error) {
-    console.error('Failed to fetch order:', error);
+    logError('Failed to fetch order:', error);
 
     return NextResponse.json(
       { error: 'Failed to load order. Please try again later.' },
@@ -71,7 +72,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
 
-    console.error('Failed to update order:', error);
+    logError('Failed to update order:', error);
 
     return NextResponse.json(
       { error: 'Failed to update order. Please try again later.' },

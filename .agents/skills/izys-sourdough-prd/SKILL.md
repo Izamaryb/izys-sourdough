@@ -20,7 +20,7 @@ technical architecture (pages, components, data models).
 
 - **Product**: mobile-first preorder site for a small in-home sourdough bakery.
 - **Cadence**: Bake day Tuesday, pickup day Wednesday. Order cutoff 48h before
-  pickup; edit/cancel window 36h before pickup.
+  pickup.
 - **Inventory**: fixed loaves per bake; ordering closes at 0. Pickup slots
   limit people, not loaves.
 - **Checkout**: guest-only, manual payments (Venmo/CashApp/Cash).

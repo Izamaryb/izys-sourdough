@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Heading } from '@/components/ui';
 
 const adminNav = [
@@ -14,18 +14,38 @@ const adminNav = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  if (pathname === '/admin/login') {
+    return <>{children}</>;
+  }
+
+  async function handleLogout() {
+    await fetch('/api/admin/logout', { method: 'POST' });
+    router.push('/admin/login');
+    router.refresh();
+  }
 
   return (
     <div className="min-h-svh bg-background">
       <div className="layout-container py-8 md:py-12">
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <Heading level={1}>Admin</Heading>
-          <Link
-            href="/"
-            className="font-body text-small font-medium text-secondary hover:text-primary"
-          >
-            ← Back to site
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/"
+              className="font-body text-small font-medium text-secondary hover:text-primary"
+            >
+              ← Back to site
+            </Link>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="font-body text-small font-medium text-secondary hover:text-primary"
+            >
+              Log out
+            </button>
+          </div>
         </div>
         <div className="grid gap-8 md:grid-cols-[240px_1fr]">
           <nav aria-label="Admin navigation" className="flex flex-col gap-2">

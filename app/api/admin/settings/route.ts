@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { logError } from '@/lib/logger';
 import {
   getAcceptedPaymentMethods,
   getVacationMode,
@@ -19,7 +20,7 @@ export async function GET() {
 
     return NextResponse.json({ paymentMethods, vacationMode });
   } catch (error) {
-    console.error('Failed to fetch settings:', error);
+    logError('Failed to fetch settings:', error);
 
     return NextResponse.json(
       { error: 'Failed to load settings. Please try again later.' },
@@ -75,7 +76,7 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json({ paymentMethods, vacationMode });
   } catch (error) {
-    console.error('Failed to update settings:', error);
+    logError('Failed to update settings:', error);
 
     return NextResponse.json(
       { error: 'Failed to update settings. Please try again later.' },

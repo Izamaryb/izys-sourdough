@@ -15,7 +15,7 @@ type ModalProps = {
 const overlayClasses =
   'fixed inset-0 z-40 bg-black/50 transition-opacity duration-[400ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none';
 const panelClasses =
-  'fixed left-1/2 top-1/2 z-50 w-[calc(100%-32px)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-lg border border-surfaceBorder bg-background p-6 shadow-card transition-[transform,opacity] duration-[400ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none';
+  'fixed left-1/2 top-1/2 z-50 w-[calc(100%-32px)] max-w-lg max-h-[calc(100vh-32px)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-lg border border-surfaceBorder bg-background p-6 shadow-card transition-[transform,opacity] duration-[400ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none';
 const headerClasses = 'flex items-start justify-between gap-4';
 const closeButtonClasses =
   'flex min-h-10 min-w-10 items-center justify-center rounded-lg text-primary transition-colors duration-200 hover:bg-accent/10 focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-4 focus-visible:outline-button';
@@ -89,7 +89,7 @@ export function Modal({ isOpen, onClose, title, children, ariaLabel }: ModalProp
             ✕
           </button>
         </div>
-        <div className="mt-4">{children}</div>
+        <div className="mt-4 pb-4">{children}</div>
       </div>
     </div>
   );

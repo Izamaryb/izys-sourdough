@@ -24,6 +24,18 @@ export async function fetchProducts(): Promise<ProductCatalogItem[]> {
   return data.products;
 }
 
+export async function fetchFeaturedProducts(): Promise<ProductCatalogItem[]> {
+  const response = await fetch('/api/products?featured=true', { cache: 'no-store' });
+  const data = (await response.json()) as ProductsApiResponse | ApiErrorResponse;
+
+  if (!response.ok || !('products' in data)) {
+    const message = 'error' in data ? data.error : 'Failed to load featured products';
+    throw new Error(message);
+  }
+
+  return data.products;
+}
+
 export async function fetchProductById(id: string): Promise<ProductCatalogItem> {
   const response = await fetch(`/api/products/${encodeURIComponent(id)}`, {
     cache: 'no-store',
