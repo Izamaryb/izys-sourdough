@@ -178,6 +178,21 @@ model Setting {
   @@index([key])
 }
 
+model Testimonial {
+  id           String   @id @default(cuid())
+  customerName String
+  quote        String
+  detail       String
+  rating       Int      @default(5)
+  isPublished  Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isPublished])
+  @@index([sortOrder])
+}
+
 model PickupSlot {
   id         String   @id @default(cuid())
   date       String

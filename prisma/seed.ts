@@ -78,6 +78,30 @@ const seedProducts = [
   },
 ];
 
+const seedTestimonials = [
+  {
+    customerName: 'Maria',
+    quote: 'The crust was perfect and the bread still tasted warm and fresh when we brought it home.',
+    detail: 'Favorite loaf: Classic Country Loaf',
+    rating: 5,
+    sortOrder: 1,
+  },
+  {
+    customerName: 'Angela',
+    quote: 'Pickup was simple, and the jalapeño cheddar loaf disappeared before dinner was over.',
+    detail: 'Repeat local customer',
+    rating: 5,
+    sortOrder: 2,
+  },
+  {
+    customerName: 'Denise',
+    quote: 'You can tell it is made with care. It feels special without being fussy.',
+    detail: 'Loves Wednesday pickup',
+    rating: 5,
+    sortOrder: 3,
+  },
+];
+
 async function main() {
   console.log('Seeding database...');
 
@@ -144,6 +168,15 @@ async function main() {
   }
 
   console.log(`Seeded ${seedBakeSessions.length} bake sessions.`);
+
+  const existingTestimonialCount = await prisma.testimonial.count();
+
+  if (existingTestimonialCount === 0) {
+    await prisma.testimonial.createMany({ data: seedTestimonials });
+    console.log(`Seeded ${seedTestimonials.length} testimonials.`);
+  } else {
+    console.log('Testimonials already exist, skipping seed.');
+  }
 }
 
 function formatDateValue(date: Date) {

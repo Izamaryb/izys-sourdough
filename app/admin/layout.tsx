@@ -9,6 +9,7 @@ const adminNav = [
   { label: 'Products', href: '/admin/products' },
   { label: 'Bake Sessions', href: '/admin/bake-sessions' },
   { label: 'Orders', href: '/admin/orders' },
+  { label: 'Testimonials', href: '/admin/testimonials' },
   { label: 'Settings', href: '/admin/settings' },
 ];
 

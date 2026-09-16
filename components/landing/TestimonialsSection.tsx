@@ -4,25 +4,9 @@ import { useEffect, useRef, useState } from 'react';
 import { SectionContainer, useScrollReveal } from '@/components/layout';
 import { Button, Heading, Text } from '@/components/ui';
 import { classNames } from '@/lib/classNames';
+import { fetchTestimonials } from '@/lib/testimonialsApi';
+import type { TestimonialItem } from '@/lib/testimonials';
 import { TestimonialCard } from './TestimonialCard';
-
-const testimonials = [
-  {
-    customerName: 'Maria',
-    quote: 'The crust was perfect and the bread still tasted warm and fresh when we brought it home.',
-    detail: 'Favorite loaf: Classic Country Loaf',
-  },
-  {
-    customerName: 'Angela',
-    quote: 'Pickup was simple, and the jalapeño cheddar loaf disappeared before dinner was over.',
-    detail: 'Repeat local customer',
-  },
-  {
-    customerName: 'Denise',
-    quote: 'You can tell it is made with care. It feels special without being fussy.',
-    detail: 'Loves Wednesday pickup',
-  },
-];
 
 const headerClasses = 'mx-auto flex max-w-2xl flex-col items-center gap-3 text-center';
 const eyebrowClasses = 'font-body text-small font-medium uppercase tracking-[0.2em] text-secondary';
@@ -35,6 +19,43 @@ const dotsClasses = 'flex items-center justify-center gap-2';
 const dotClasses = 'h-2.5 w-2.5 rounded-full border border-button';
 
 export function TestimonialsSection() {
+  const [testimonials, setTestimonials] = useState<TestimonialItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function load() {
+      try {
+        const data = await fetchTestimonials();
+
+        if (!isCancelled) {
+          setTestimonials(data);
+        }
+      } catch {
+        // Silently fail — section just won't render testimonials
+      } finally {
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    load();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  if (isLoading || testimonials.length === 0) {
+    return null;
+  }
+
+  return <TestimonialsCarousel testimonials={testimonials} />;
+}
+
+function TestimonialsCarousel({ testimonials }: { testimonials: TestimonialItem[] }) {
   const reveal = useScrollReveal();
   const [activeIndex, setActiveIndex] = useState(0);
   const [displayedIndex, setDisplayedIndex] = useState(0);
@@ -117,7 +138,7 @@ export function TestimonialsSection() {
         <div className={viewportClasses}>
           {testimonials.map((testimonial, index) => (
             <div
-              key={testimonial.customerName}
+              key={testimonial.id}
               className={classNames(
                 '[grid-area:1/1]',
                 testimonialTransitionClasses,
@@ -140,7 +161,7 @@ export function TestimonialsSection() {
           <div className={dotsClasses} aria-label="Testimonial position">
             {testimonials.map((testimonial, index) => (
               <button
-                key={testimonial.customerName}
+                key={testimonial.id}
                 type="button"
                 className={classNames(
                   dotClasses,
