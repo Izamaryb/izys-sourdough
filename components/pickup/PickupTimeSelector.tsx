@@ -5,6 +5,7 @@ import type { PickupSlot } from './types';
 type PickupTimeSelectorProps = {
   slots: PickupSlot[];
   selectedTime: string;
+  placeholder: string;
   disabled?: boolean;
   onSelectTime: (time: string) => void;
 };
@@ -21,7 +22,13 @@ const optionClasses =
 const optionSelectedClasses = 'bg-accent/20 font-medium';
 const optionHighlightedClasses = 'bg-background-soft';
 
-export function PickupTimeSelector({ slots, selectedTime, disabled = false, onSelectTime }: PickupTimeSelectorProps) {
+export function PickupTimeSelector({
+  slots,
+  selectedTime,
+  placeholder,
+  disabled = false,
+  onSelectTime,
+}: PickupTimeSelectorProps) {
   const baseId = useId();
   const labelId = `${baseId}-label`;
   const triggerId = `${baseId}-trigger`;
@@ -34,7 +41,6 @@ export function PickupTimeSelector({ slots, selectedTime, disabled = false, onSe
 
   const availableSlots = slots.filter((slot) => !slot.reserved);
   const selectedIndex = availableSlots.findIndex((slot) => slot.value === selectedTime);
-  const placeholder = disabled ? 'Select a pickup date first' : 'Select a pickup time';
 
   function openListbox() {
     if (disabled || availableSlots.length === 0) return;

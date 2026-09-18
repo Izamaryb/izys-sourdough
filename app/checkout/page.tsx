@@ -338,6 +338,7 @@ export default function CheckoutPage() {
     }
 
     setIsSubmitting(true);
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
 
     try {
       const response = await fetch('/api/orders', {
@@ -385,7 +386,6 @@ export default function CheckoutPage() {
     } catch (error) {
       console.error('Failed to place order:', error);
       setSubmitError(error instanceof Error ? error.message : 'Failed to place order. Please try again.');
-    } finally {
       setIsSubmitting(false);
     }
   }

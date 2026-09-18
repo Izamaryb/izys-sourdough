@@ -1,5 +1,5 @@
-import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
+import { ImageCarousel } from '@/components/product/ImageCarousel';
 import { Button, CheckIcon, Heading, Text } from '@/components/ui';
 import { useCart } from '@/hooks/useCart';
 import { classNames } from '@/lib/classNames';
@@ -61,16 +61,13 @@ export function OrderProductCard({ product, quantity, onDecrease, onIncrease }: 
 
   return (
     <article className={cardClasses}>
-      <div className={imageWrapClasses}>
-        <Image
-          src={product.image}
-          alt={product.name}
-          fill
-          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 900px, 1040px"
-          className={classNames(imageClasses, isSoldOut && 'opacity-70')}
-        />
-        {isSoldOut ? <div className={soldOutOverlayClasses}>Sold Out</div> : null}
-      </div>
+      <ImageCarousel
+        image={product.image}
+        alt={product.name}
+        wrapClassName={imageWrapClasses}
+        imageClassName={classNames(imageClasses, isSoldOut && 'opacity-70')}
+        overlay={isSoldOut ? <div className={soldOutOverlayClasses}>Sold Out</div> : null}
+      />
       <div className={contentClasses}>
         <div className={copyClasses}>
           <div className="flex items-start justify-between gap-4">

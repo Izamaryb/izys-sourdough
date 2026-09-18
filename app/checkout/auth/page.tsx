@@ -165,6 +165,10 @@ export default function CheckoutAuthPage() {
             {isLoading ? 'Signing in...' : 'Sign In for Faster Checkout'}
           </Button>
 
+          <Link href="/checkout/auth/forgot-password" className={`${createAccountLinkClasses} mx-auto`}>
+            Forgot password?
+          </Link>
+
           <button
             type="button"
             onClick={handleCreateAccount}

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { PageContainer, SectionContainer } from '@/components/layout';
-import { Button, Heading, Text } from '@/components/ui';
+import { Button, Heading, ScrollToTop, Text } from '@/components/ui';
 import { getOrderById } from '@/lib/orders';
 
 const paymentLabels: Record<string, string> = {
@@ -34,6 +34,7 @@ export default async function OrderConfirmationPage({ params }: OrderConfirmatio
 
   return (
     <PageContainer>
+      <ScrollToTop />
       <SectionContainer spacing="lg" aria-labelledby="confirmation-heading">
         <div className={heroClasses}>
           <p className="font-body text-small font-medium uppercase tracking-[0.2em] text-secondary">

@@ -1,9 +1,9 @@
-import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import { QuantitySelector } from '@/components/order';
 import { Button, CheckIcon, Heading, Text } from '@/components/ui';
 import { useCart } from '@/hooks/useCart';
 import { classNames } from '@/lib/classNames';
+import { ImageCarousel } from './ImageCarousel';
 
 type ProductCardProps = {
   name: string;
@@ -88,16 +88,13 @@ export function ProductCard({
 
   return (
     <article className={cardClasses}>
-      <div className={imageWrapClasses}>
-        <Image
-          src={image}
-          alt={name}
-          fill
-          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 900px, 1040px"
-          className={classNames(imageClasses, soldOut && 'opacity-70')}
-        />
-        {soldOut ? <div className={badgeClasses}>Sold Out</div> : null}
-      </div>
+      <ImageCarousel
+        image={image}
+        alt={name}
+        wrapClassName={imageWrapClasses}
+        imageClassName={classNames(imageClasses, soldOut && 'opacity-70')}
+        overlay={soldOut ? <div className={badgeClasses}>Sold Out</div> : null}
+      />
       <div className={contentClasses}>
         <div className="grid gap-2">
           <Heading level={3}>{name}</Heading>

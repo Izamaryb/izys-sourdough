@@ -4,5 +4,6 @@ export { CheckoutStepProgress } from './CheckoutStepProgress';
 export { Heading } from './Heading';
 export { InputField } from './InputField';
 export { Modal } from './Modal';
+export { ScrollToTop } from './ScrollToTop';
 export { SelectField } from './SelectField';
 export { Text } from './Text';

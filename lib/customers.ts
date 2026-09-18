@@ -102,3 +102,27 @@ export async function verifyCustomerCredentials(
 
   return mapCustomerToAccount(customer);
 }
+
+export async function updateCustomerPassword(
+  email: string,
+  password: string,
+): Promise<CustomerAccount | null> {
+  const normalizedEmail = email.toLowerCase().trim();
+
+  const existing = await prisma.customer.findUnique({
+    where: { email: normalizedEmail },
+  });
+
+  if (!existing) {
+    return null;
+  }
+
+  const passwordHash = await hashPassword(password.trim());
+
+  const customer = await prisma.customer.update({
+    where: { email: normalizedEmail },
+    data: { passwordHash },
+  });
+
+  return mapCustomerToAccount(customer);
+}

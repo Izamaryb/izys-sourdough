@@ -336,3 +336,94 @@ export async function sendOrderConfirmationEmail(order: OrderConfirmation): Prom
     console.error('[email] Failed to send order confirmation email:', error);
   }
 }
+
+export function buildPasswordResetEmail(resetLink: string) {
+  const subject = "Izy's Sourdough — Reset your password";
+
+  const text = `Hi,
+
+We received a request to reset the password for your Izy's Sourdough account.
+
+Reset your password by clicking this link (or copy and paste it into your browser):
+${resetLink}
+
+This link will expire in 1 hour. If you didn't ask to reset your password, you can ignore this email.
+
+Thanks,
+Izy's Sourdough
+`;
+
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(subject)}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #FDFBF8; color: #4A3B2F; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.5;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #FDFBF8; padding: 24px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%; background-color: #FDFBF8; border: 1px solid #D4CEB2; border-radius: 8px; overflow: hidden;">
+          <tr>
+            <td style="padding: 32px 24px 24px;">
+              <h1 style="margin: 0 0 16px; font-size: 24px; color: #4A3B2F;">Izy's Sourdough</h1>
+              <p style="margin: 0 0 24px; font-size: 16px; color: #4A3B2F;">Hi there,</p>
+              <p style="margin: 0 0 24px; font-size: 16px; color: #4A3B2F;">We received a request to reset the password for your account. Click the button below to choose a new password.</p>
+
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 32px 0;">
+                <tr>
+                  <td style="border-radius: 8px; background-color: #706351;">
+                    <a href="${resetLink}" style="display: inline-block; padding: 14px 24px; font-size: 16px; font-weight: 500; color: #FDFBF8; text-decoration: none; border-radius: 8px;">Reset your password</a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin: 0 0 12px; font-size: 14px; color: #706351;">This link will expire in 1 hour.</p>
+              <p style="margin: 0 0 24px; font-size: 14px; color: #706351;">If you didn't ask to reset your password, you can ignore this email.</p>
+
+              <p style="margin: 0; font-size: 16px; color: #4A3B2F; font-weight: 500;">Thanks,<br>Izy's Sourdough</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
+
+  return { subject, text, html };
+}
+
+export async function sendPasswordResetEmail(email: string, resetLink: string): Promise<void> {
+  if (!email) {
+    console.warn('[email] No email provided. Skipping password reset email.');
+    return;
+  }
+
+  const config = getEmailConfig();
+  const transport = getTransport(config);
+  const { subject, text, html } = buildPasswordResetEmail(resetLink);
+  const from = `${config.fromName || "Izy's Sourdough"} <${config.from}>`;
+
+  if (!transport) {
+    console.log('[email] SMTP not configured. Password reset email would be sent to:', email);
+    console.log('[email] Reset link:', resetLink);
+    return;
+  }
+
+  try {
+    await transport.sendMail({
+      from,
+      to: email,
+      subject,
+      text,
+      html,
+    });
+    console.log('[email] Password reset email sent to:', email);
+  } catch (error) {
+    console.error('[email] Failed to send password reset email:', error);
+  }
+}

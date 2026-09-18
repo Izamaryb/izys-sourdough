@@ -139,7 +139,15 @@ export default function PickupPage() {
                   selectedDate={cart.selectedPickupDate ?? ''}
                   onSelectDate={(date) => {
                     cart.setPickupDate(date);
-                    if (!date) cart.clearPickupTime();
+                    if (!date) {
+                      cart.clearPickupTime();
+                    } else {
+                      requestAnimationFrame(() => {
+                        document
+                          .getElementById('pickup-time-selector')
+                          ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      });
+                    }
                   }}
                 />
               </div>
@@ -167,6 +175,9 @@ export default function PickupPage() {
                   <PickupTimeSelector
                     slots={pickupSlots}
                     selectedTime={cart.selectedPickupTime ?? ''}
+                    placeholder={
+                      cart.selectedPickupDate ? 'Select a pickup time' : 'Select a pickup date first'
+                    }
                     disabled={!cart.selectedPickupDate || isLoadingSlots}
                     onSelectTime={cart.setPickupTime}
                   />

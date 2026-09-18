@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { PageContainer, SectionContainer } from '@/components/layout';
-import { Button, Heading, Text } from '@/components/ui';
+import { Button, Heading, ScrollToTop, Text } from '@/components/ui';
 import type { PaymentMethod, PreparedOrder } from '@/types/checkout';
 
 const CONFIRMATION_STORAGE_KEY = 'izys-sourdough-last-order';
@@ -42,6 +42,7 @@ export default function OrderConfirmationPage() {
 
   return (
     <PageContainer>
+      <ScrollToTop />
       <SectionContainer spacing="lg" aria-labelledby="confirmation-heading">
         <div className={heroClasses}>
           <p className="font-body text-small font-medium uppercase tracking-[0.2em] text-secondary">Order received</p>
