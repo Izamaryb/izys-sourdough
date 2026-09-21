@@ -76,14 +76,27 @@ export function ImageCarousel({
   const slideRefs = useRef<Array<HTMLDivElement | null>>([]);
   const wheelAccumRef = useRef(0);
   const wheelLockedRef = useRef(false);
+  const prevIndexRef = useRef(0);
 
-  function applyTransforms(baseIndex: number, offsetPx: number, withTransition: boolean) {
+  function isJumpSlide(slideIndex: number, baseIndex: number, fromIndex: number) {
+    const newRelative = getRelativeOffset(slideIndex, baseIndex, total);
+    const oldRelative = getRelativeOffset(slideIndex, fromIndex, total);
+    return Math.abs(newRelative - oldRelative) > 1;
+  }
+
+  function applyTransforms(
+    baseIndex: number,
+    offsetPx: number,
+    withTransition: boolean,
+    fromIndex: number = baseIndex,
+  ) {
     slideRefs.current.forEach((el, i) => {
       if (!el) {
         return;
       }
 
-      el.style.transition = withTransition ? SLIDE_TRANSITION : 'none';
+      const isJump = withTransition && isJumpSlide(i, baseIndex, fromIndex);
+      el.style.transition = withTransition && !isJump ? SLIDE_TRANSITION : 'none';
       el.style.transform = `translate3d(calc(${getRelativeOffset(i, baseIndex, total) * 100}% + ${offsetPx}px), 0, 0)`;
     });
   }
@@ -93,7 +106,8 @@ export function ImageCarousel({
   }
 
   useEffect(() => {
-    applyTransforms(index, 0, true);
+    applyTransforms(index, 0, true, prevIndexRef.current);
+    prevIndexRef.current = index;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index]);
 
@@ -167,7 +181,7 @@ export function ImageCarousel({
       newIndex = (index - 1 + total) % total;
     }
 
-    applyTransforms(newIndex, 0, true);
+    applyTransforms(newIndex, 0, true, index);
     setIndex(newIndex);
 
     touchStartX.current = null;
@@ -189,7 +203,10 @@ export function ImageCarousel({
             ref={(el) => {
               slideRefs.current[i] = el;
             }}
-            style={{ transform: `translate3d(${getRelativeOffset(i, index, total) * 100}%, 0, 0)` }}
+            style={{
+              transform: `translate3d(${getRelativeOffset(i, index, total) * 100}%, 0, 0)`,
+              transition: isJumpSlide(i, index, prevIndexRef.current) ? 'none' : undefined,
+            }}
             className={classNames(
               'absolute inset-0',
               i === index ? '' : 'pointer-events-none',
