@@ -64,7 +64,7 @@ export function CartProvider({ children }: CartProviderProps) {
     }
 
     function increaseQuantity(item: CartItemInput) {
-      if (item.availability === 'sold-out') {
+      if (item.availability === 'sold-out' || item.stockQuantity <= 0) {
         return;
       }
 
@@ -72,10 +72,16 @@ export function CartProvider({ children }: CartProviderProps) {
         const existingItem = currentState.items.find((cartItem) => cartItem.id === item.id);
 
         if (existingItem) {
+          if (existingItem.quantity >= item.stockQuantity) {
+            return currentState;
+          }
+
           return {
             ...currentState,
             items: currentState.items.map((cartItem) =>
-              cartItem.id === item.id ? { ...cartItem, quantity: cartItem.quantity + 1 } : cartItem,
+              cartItem.id === item.id
+                ? { ...cartItem, stockQuantity: item.stockQuantity, quantity: cartItem.quantity + 1 }
+                : cartItem,
             ),
           };
         }
@@ -97,12 +103,16 @@ export function CartProvider({ children }: CartProviderProps) {
     }
 
     function updateQuantity(itemId: string, quantity: number) {
-      const nextQuantity = Math.max(Math.floor(quantity), 0);
+      const requestedQuantity = Math.max(Math.floor(quantity), 0);
 
       setCartState((currentState) => ({
         ...currentState,
         items: currentState.items
-          .map((item) => (item.id === itemId ? { ...item, quantity: nextQuantity } : item))
+          .map((item) =>
+            item.id === itemId
+              ? { ...item, quantity: Math.min(requestedQuantity, item.stockQuantity) }
+              : item,
+          )
           .filter((item) => item.quantity > 0),
       }));
     }

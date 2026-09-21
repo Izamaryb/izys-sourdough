@@ -115,7 +115,7 @@ export function CartDrawer() {
                         type="button"
                         className={stepperButtonClasses}
                         onClick={() => cart.increaseQuantity(item)}
-                        disabled={item.availability === 'sold-out'}
+                        disabled={item.availability === 'sold-out' || item.quantity >= item.stockQuantity}
                         aria-label={`Increase ${item.name} quantity`}
                       >
                         +

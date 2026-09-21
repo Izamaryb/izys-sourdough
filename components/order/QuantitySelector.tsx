@@ -2,6 +2,7 @@ type QuantitySelectorProps = {
   productName: string;
   quantity: number;
   disabled?: boolean;
+  increaseDisabled?: boolean;
   onDecrease: () => void;
   onIncrease: () => void;
 };
@@ -14,6 +15,7 @@ export function QuantitySelector({
   productName,
   quantity,
   disabled = false,
+  increaseDisabled = false,
   onDecrease,
   onIncrease,
 }: QuantitySelectorProps) {
@@ -35,7 +37,7 @@ export function QuantitySelector({
         type="button"
         className={buttonClasses}
         onClick={onIncrease}
-        disabled={disabled}
+        disabled={disabled || increaseDisabled}
         aria-label={`Increase ${productName} quantity`}
       >
         +

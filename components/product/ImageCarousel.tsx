@@ -6,6 +6,20 @@ import { classNames } from '@/lib/classNames';
 
 const SWIPE_THRESHOLD_PX = 40;
 const WHEEL_LOCK_MS = 350;
+const SLIDE_TRANSITION = 'transform 480ms cubic-bezier(0.16, 1, 0.3, 1)';
+
+function getRelativeOffset(slideIndex: number, baseIndex: number, total: number) {
+  let relative = slideIndex - baseIndex;
+  const half = total / 2;
+
+  if (relative > half) {
+    relative -= total;
+  } else if (relative < -half) {
+    relative += total;
+  }
+
+  return relative;
+}
 
 type ImageCarouselProps = {
   image: string;
@@ -55,17 +69,33 @@ export function ImageCarousel({
 }: ImageCarouselProps) {
   const slides = [image, ...Array.from<string | null>({ length: placeholderCount }).fill(null)];
   const [index, setIndex] = useState(0);
-  const [dragOffset, setDragOffset] = useState(0);
   const total = slides.length;
   const touchStartX = useRef<number | null>(null);
   const touchDeltaX = useRef(0);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const slideRefs = useRef<Array<HTMLDivElement | null>>([]);
   const wheelAccumRef = useRef(0);
   const wheelLockedRef = useRef(false);
+
+  function applyTransforms(baseIndex: number, offsetPx: number, withTransition: boolean) {
+    slideRefs.current.forEach((el, i) => {
+      if (!el) {
+        return;
+      }
+
+      el.style.transition = withTransition ? SLIDE_TRANSITION : 'none';
+      el.style.transform = `translate3d(calc(${getRelativeOffset(i, baseIndex, total) * 100}% + ${offsetPx}px), 0, 0)`;
+    });
+  }
 
   function goTo(next: number) {
     setIndex(((next % total) + total) % total);
   }
+
+  useEffect(() => {
+    applyTransforms(index, 0, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -106,6 +136,10 @@ export function ImageCarousel({
   }, [total]);
 
   function handleTouchStart(e: React.TouchEvent) {
+    if (total <= 1) {
+      return;
+    }
+
     touchStartX.current = e.touches[0].clientX;
     touchDeltaX.current = 0;
   }
@@ -116,21 +150,28 @@ export function ImageCarousel({
     }
 
     touchDeltaX.current = e.touches[0].clientX - touchStartX.current;
-    setDragOffset(touchDeltaX.current);
+    applyTransforms(index, touchDeltaX.current, false);
   }
 
   function handleTouchEnd() {
+    if (touchStartX.current === null) {
+      return;
+    }
+
     const delta = touchDeltaX.current;
+    let newIndex = index;
 
     if (delta <= -SWIPE_THRESHOLD_PX) {
-      goTo(index + 1);
+      newIndex = (index + 1 + total) % total;
     } else if (delta >= SWIPE_THRESHOLD_PX) {
-      goTo(index - 1);
+      newIndex = (index - 1 + total) % total;
     }
+
+    applyTransforms(newIndex, 0, true);
+    setIndex(newIndex);
 
     touchStartX.current = null;
     touchDeltaX.current = 0;
-    setDragOffset(0);
   }
 
   return (
@@ -145,10 +186,13 @@ export function ImageCarousel({
         {slides.map((slide, i) => (
           <div
             key={i}
-            style={i === index && dragOffset !== 0 ? { transform: `translateX(${dragOffset}px)` } : undefined}
+            ref={(el) => {
+              slideRefs.current[i] = el;
+            }}
+            style={{ transform: `translate3d(${getRelativeOffset(i, index, total) * 100}%, 0, 0)` }}
             className={classNames(
-              'absolute inset-0 transition-opacity duration-300 ease-in-out',
-              i === index ? 'opacity-100' : 'pointer-events-none opacity-0',
+              'absolute inset-0',
+              i === index ? '' : 'pointer-events-none',
             )}
             aria-hidden={i === index ? undefined : true}
           >

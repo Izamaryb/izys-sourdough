@@ -14,6 +14,7 @@ export type CartItemInput = {
   price: number;
   image: string;
   availability: CartAvailability;
+  stockQuantity: number;
 };
 
 export type CartItem = CartItemInput & {

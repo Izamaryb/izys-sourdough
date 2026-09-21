@@ -2,6 +2,32 @@ import Link from 'next/link';
 import { PageContainer, SectionContainer } from '@/components/layout';
 import { Button, Heading, Text } from '@/components/ui';
 
+function BreadPlaceholderIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      className={className}
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M4 10.5c0-3.038 3.582-5.5 8-5.5s8 2.462 8 5.5c0 .552-.336 1-.9 1.12C17.86 11.86 15.06 12 12 12s-5.86-.14-7.1-.38c-.564-.12-.9-.568-.9-1.12z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M4.5 11.5 4 17a2 2 0 0 0 2 2.2h12A2 2 0 0 0 20 17l-.5-5.5"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12v-1.5M15 12v-1.5" />
+    </svg>
+  );
+}
+
 const storyParagraphs = [
   'Hi! I’m Izamary, the baker behind Izy’s Sourdough.',
   'My baking journey began during my pregnancy with my second child, when life suddenly slowed down — a lot. I went from working full time and going to school to having more quiet time at home than I had in a very long time. I needed something creative to pour myself into, and with a lot of encouragement from my husband, I started baking.',
@@ -10,8 +36,8 @@ const storyParagraphs = [
   'So where does sourdough fit into all of this?',
   'Honestly, sourdough was always something I wanted to try, but it felt intimidating. After learning more advanced baking techniques — from laminated doughs for croissants and Danish pastries to layered cakes — I finally thought, “Maybe I can actually do this.”',
   'And once again, with the full support of my husband, the sourdough journey began.',
-  'He bought me everything I needed to get started, and after months of trial and error, I finally created my very first healthy starter in October 2024. I haven’t looked back since.',
-  'Now, almost everything I bake is sourdough. From tortillas and burger buns to sandwich bread, bagels, pancakes, and of course artisan loaves — sourdough has become part of our everyday life.',
+  'After months of trial and error, I finally created my very first healthy starter in October 2024. I haven’t looked back since.',
+  'Now, almost everything I bake is sourdough, or has sourdough in it.',
   'What I love most is creating bread that feels both comforting and beautiful. Every loaf is handmade with patience, creativity, and care — almost like edible art.',
   'If you buy bread from me, I hope you can taste the journey, the love, and the care in every bite.',
 ];
@@ -31,7 +57,7 @@ const philosophyItems = [
   },
   {
     title: 'Fresh weekly rhythm',
-    description: 'Bread is baked fresh on Wednesday pickup morning so customers receive it at its best.',
+    description: 'Bread is baked fresh on pickup morning so customers receive it at its best.',
   },
 ];
 
@@ -44,6 +70,8 @@ const centeredIntroClasses = 'mx-auto flex max-w-xl flex-col items-center gap-3 
 const storyCardClasses = 'rounded-lg border border-surfaceBorder bg-background p-6 shadow-card sm:p-8';
 const storyBodyClasses = 'grid gap-5';
 const storyTextClasses = 'text-primary/90';
+const storyImageClasses =
+  'mt-4 flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 rounded-lg bg-accent/20 text-primary/40';
 const philosophyGridClasses = 'mt-10 grid gap-8 sm:grid-cols-2';
 const philosophyCardClasses = 'flex flex-col gap-3';
 const cardTextClasses = 'text-primary/90';
@@ -79,6 +107,12 @@ export default function AboutPage() {
             <Text className="text-primary/90">
               A personal baking journey shaped by family, patience, and a growing love for handmade bread.
             </Text>
+            <div className={storyImageClasses}>
+              <BreadPlaceholderIcon className="h-10 w-10" />
+              <span className="font-body text-small font-medium uppercase tracking-[0.14em]">
+                Photo coming soon
+              </span>
+            </div>
           </div>
           <article className={storyCardClasses}>
             <div className={storyBodyClasses}>

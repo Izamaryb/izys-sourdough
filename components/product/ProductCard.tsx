@@ -15,6 +15,7 @@ type ProductCardProps = {
   onCtaClick?: () => void;
   soldOut?: boolean;
   quantity?: number;
+  maxQuantity?: number;
   onDecrease?: () => void;
   onIncrease?: () => void;
 };
@@ -39,6 +40,7 @@ export function ProductCard({
   onCtaClick,
   soldOut = false,
   quantity = 0,
+  maxQuantity,
   onDecrease,
   onIncrease,
 }: ProductCardProps) {
@@ -119,6 +121,7 @@ export function ProductCard({
                 productName={name}
                 quantity={quantity}
                 disabled={soldOut}
+                increaseDisabled={maxQuantity !== undefined && quantity >= maxQuantity}
                 onDecrease={onDecrease}
                 onIncrease={onIncrease}
               />

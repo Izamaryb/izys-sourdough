@@ -88,6 +88,7 @@ function FeaturedProductsContent({ products, cart }: { products: ProductCatalogI
               image={product.image}
               soldOut={isSoldOut}
               quantity={cart.getItemQuantity(product.slug)}
+              maxQuantity={product.stockQuantity}
               onCtaClick={() =>
                 cart.increaseQuantity({
                   id: product.slug,
@@ -95,6 +96,7 @@ function FeaturedProductsContent({ products, cart }: { products: ProductCatalogI
                   price: product.price,
                   image: product.image,
                   availability,
+                  stockQuantity: product.stockQuantity,
                 })
               }
               onDecrease={() => cart.decreaseQuantity(product.slug)}
@@ -105,6 +107,7 @@ function FeaturedProductsContent({ products, cart }: { products: ProductCatalogI
                   price: product.price,
                   image: product.image,
                   availability,
+                  stockQuantity: product.stockQuantity,
                 })
               }
             />

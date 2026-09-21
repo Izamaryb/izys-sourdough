@@ -57,7 +57,9 @@ export default function AdminOrdersPage() {
         throw new Error(data.error ?? 'Failed to update order status.');
       }
 
-      await loadOrders();
+      const data = (await response.json()) as { order: OrderConfirmation };
+      setOrders((prev) => prev.map((o) => (o.id === order.id ? data.order : o)));
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.');
     }
@@ -76,7 +78,9 @@ export default function AdminOrdersPage() {
         throw new Error(data.error ?? 'Failed to update payment status.');
       }
 
-      await loadOrders();
+      const data = (await response.json()) as { order: OrderConfirmation };
+      setOrders((prev) => prev.map((o) => (o.id === order.id ? data.order : o)));
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.');
     }

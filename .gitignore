@@ -10,3 +10,4 @@ build
 next-env.d.ts
 prisma/dev.db
 prisma/dev.db-journal
+.env*

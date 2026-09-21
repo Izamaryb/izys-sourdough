@@ -43,13 +43,32 @@ export async function reserveBakeSessionCapacity(
     );
   }
 
-  await tx.bakeSession.update({
-    where: { id: bakeSessionId },
+  // Atomic guard: the WHERE clause is re-evaluated against the current row at
+  // update time, so this prevents two concurrent orders from both passing the
+  // capacity check above and overshooting maxCapacity.
+  const result = await tx.bakeSession.updateMany({
+    where: {
+      id: bakeSessionId,
+      status: BakeSessionStatus.open,
+      reservedUnits: { lte: bakeSession.maxCapacity - units },
+    },
     data: {
       reservedUnits: { increment: units },
-      status: remainingCapacity === units ? BakeSessionStatus.full : bakeSession.status,
     },
   });
+
+  if (result.count === 0) {
+    throw new Error('Not enough bake capacity for this pickup date.');
+  }
+
+  const updated = await tx.bakeSession.findUnique({ where: { id: bakeSessionId } });
+
+  if (updated && updated.status === BakeSessionStatus.open && updated.reservedUnits >= updated.maxCapacity) {
+    await tx.bakeSession.update({
+      where: { id: bakeSessionId },
+      data: { status: BakeSessionStatus.full },
+    });
+  }
 }
 
 export async function releaseBakeSessionCapacity(

@@ -16,6 +16,7 @@ export type OrderProduct = {
   ingredients: string[];
   allergens: string[];
   inventoryStatus: InventoryStatus;
+  stockQuantity: number;
 };
 
 type OrderProductCardProps = {
@@ -89,6 +90,7 @@ export function OrderProductCard({ product, quantity, onDecrease, onIncrease }: 
               productName={product.name}
               quantity={quantity}
               disabled={isSoldOut}
+              increaseDisabled={quantity >= product.stockQuantity}
               onDecrease={onDecrease}
               onIncrease={onIncrease}
             />

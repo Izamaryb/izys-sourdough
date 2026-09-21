@@ -52,6 +52,7 @@ export default function MenuPage() {
             ingredients: product.ingredients,
             allergens: product.allergens,
             inventoryStatus: product.inventoryStatus,
+            stockQuantity: product.stockQuantity,
           })),
         );
       } catch (err) {
@@ -112,6 +113,7 @@ export default function MenuPage() {
                       price: product.price,
                       image: product.image,
                       availability: getCartAvailability(product.inventoryStatus),
+                      stockQuantity: product.stockQuantity,
                     })
                   }
                 />

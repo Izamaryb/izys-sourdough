@@ -53,11 +53,16 @@ export function isReadyForCheckout(state: CartState) {
 
 export function normalizeCartState(state: StoredCartState): CartState {
   const items = (state.items ?? [])
-    .map((item) => ({
-      ...item,
-      availability: item.availability ?? 'available',
-      quantity: Math.max(item.quantity, 0),
-    }))
+    .map((item) => {
+      const stockQuantity = Math.max(item.stockQuantity ?? 0, 0);
+
+      return {
+        ...item,
+        availability: item.availability ?? 'available',
+        stockQuantity,
+        quantity: Math.min(Math.max(item.quantity, 0), stockQuantity),
+      };
+    })
     .filter((item) => item.quantity > 0 && isInventoryAvailable(item));
 
   return {
