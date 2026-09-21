@@ -14,8 +14,10 @@ import {
   readStoredCheckoutForm,
   saveStoredAccountCustomer,
 } from '@/lib/checkoutStorage';
+import { fetchAcceptedPaymentMethods } from '@/lib/paymentMethodsApi';
 import { fetchPickupSlots } from '@/lib/pickupSlotsApi';
 import { fetchProducts } from '@/lib/productsApi';
+import type { AcceptedPaymentMethodsSetting } from '@/lib/settings';
 import { useCart } from '@/hooks/useCart';
 import type { CheckoutCustomer, CheckoutFormState, PaymentMethod } from '@/types/checkout';
 
@@ -36,11 +38,17 @@ const initialFormState: CheckoutFormState = {
   confirmAccountPassword: '',
 };
 
-const paymentOptions: { value: PaymentMethod; label: string; helper: string }[] = [
+const ALL_PAYMENT_OPTIONS: { value: PaymentMethod; label: string; helper: string }[] = [
   { value: 'venmo', label: 'Venmo', helper: '' },
   { value: 'cash-app', label: 'Cash App', helper: '' },
   { value: 'cash', label: 'Cash at Pickup', helper: 'Bring exact payment when possible.' },
 ];
+
+const DEFAULT_ACCEPTED_PAYMENT_METHODS: AcceptedPaymentMethodsSetting = {
+  cash: true,
+  venmo: true,
+  'cash-app': true,
+};
 
 function formatPhoneNumber(raw: string) {
   const digits = raw.replace(/\D/g, '');
@@ -88,8 +96,49 @@ export default function CheckoutPage() {
   const [availabilityError, setAvailabilityError] = useState<string | null>(null);
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
   const [storedAccount, setStoredAccount] = useState<CheckoutCustomer | null>(null);
+  const [acceptedPaymentMethods, setAcceptedPaymentMethods] = useState<AcceptedPaymentMethodsSetting>(
+    DEFAULT_ACCEPTED_PAYMENT_METHODS,
+  );
+  const [isLoadingPaymentMethods, setIsLoadingPaymentMethods] = useState(true);
   const canPersistRef = useRef(false);
   const hasLoadedRef = useRef(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchAcceptedPaymentMethods()
+      .then((methods) => {
+        if (!cancelled) {
+          setAcceptedPaymentMethods(methods);
+        }
+      })
+      .catch(() => {
+        // Fall back to the default (all methods enabled) if the setting can't be loaded.
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoadingPaymentMethods(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const paymentOptions = useMemo(
+    () => ALL_PAYMENT_OPTIONS.filter((option) => acceptedPaymentMethods[option.value]),
+    [acceptedPaymentMethods],
+  );
+
+  useEffect(() => {
+    if (
+      formState.paymentMethod &&
+      !acceptedPaymentMethods[formState.paymentMethod as PaymentMethod]
+    ) {
+      setFormState((current) => ({ ...current, paymentMethod: '' }));
+    }
+  }, [acceptedPaymentMethods, formState.paymentMethod]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !canPersistRef.current) {
@@ -338,6 +387,7 @@ export default function CheckoutPage() {
     }
 
     setIsSubmitting(true);
+    cart.setIsPlacingOrder(true);
     window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
 
     try {
@@ -387,6 +437,7 @@ export default function CheckoutPage() {
       console.error('Failed to place order:', error);
       setSubmitError(error instanceof Error ? error.message : 'Failed to place order. Please try again.');
       setIsSubmitting(false);
+      cart.setIsPlacingOrder(false);
     }
   }
 
@@ -614,34 +665,47 @@ export default function CheckoutPage() {
                 Payment is not collected during checkout. You’ll pay later at pickup.
               </Text>
               <div className="mt-5 grid gap-3" role="radiogroup" aria-labelledby="payment-heading">
-                {paymentOptions.map((option) => (
-                  <label
-                    key={option.value}
-                    className={classNames(
-                      radioCardClasses,
-                      formState.paymentMethod === option.value && selectedCardClasses,
-                    )}
-                  >
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value={option.value}
-                      checked={formState.paymentMethod === option.value}
-                      onChange={() => setFormState((current) => ({ ...current, paymentMethod: option.value }))}
-                      onClick={() =>
-                        setFormState((current) => ({
-                          ...current,
-                          paymentMethod: current.paymentMethod === option.value ? '' : option.value,
-                        }))
-                      }
-                      className="mt-1 size-4 accent-button"
-                    />
-                    <span>
-                      <span className={itemTextClasses}>{option.label}</span>
-                      <span className="mt-1 block font-body text-small text-primary/90">{option.helper}</span>
-                    </span>
-                  </label>
-                ))}
+                {isLoadingPaymentMethods ? (
+                  ALL_PAYMENT_OPTIONS.map((option) => (
+                    <div
+                      key={option.value}
+                      className={classNames(radioCardClasses, 'animate-pulse')}
+                      aria-hidden="true"
+                    >
+                      <div className="h-5 w-5 rounded-full bg-primary/10" />
+                      <span className="h-4 w-24 rounded bg-primary/10" />
+                    </div>
+                  ))
+                ) : (
+                  paymentOptions.map((option) => (
+                    <label
+                      key={option.value}
+                      className={classNames(
+                        radioCardClasses,
+                        formState.paymentMethod === option.value && selectedCardClasses,
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value={option.value}
+                        checked={formState.paymentMethod === option.value}
+                        onChange={() => setFormState((current) => ({ ...current, paymentMethod: option.value }))}
+                        onClick={() =>
+                          setFormState((current) => ({
+                            ...current,
+                            paymentMethod: current.paymentMethod === option.value ? '' : option.value,
+                          }))
+                        }
+                        className="mt-1 size-4 accent-button"
+                      />
+                      <span>
+                        <span className={itemTextClasses}>{option.label}</span>
+                        <span className="mt-1 block font-body text-small text-primary/90">{option.helper}</span>
+                      </span>
+                    </label>
+                  ))
+                )}
               </div>
               {hasSubmitted && validation.errors.paymentMethod ? (
                 <p className={errorClasses}>{validation.errors.paymentMethod}</p>

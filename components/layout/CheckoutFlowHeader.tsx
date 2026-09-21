@@ -4,12 +4,12 @@ import { usePathname } from 'next/navigation';
 import { useCart } from '@/hooks/useCart';
 import { CheckoutHeader, type CheckoutStep } from './CheckoutHeader';
 
-function getSteps(pathname: string, isReadyForCheckout: boolean): CheckoutStep[] {
+function getSteps(pathname: string, isReadyForCheckout: boolean, isPlacingOrder: boolean): CheckoutStep[] {
   if (pathname === '/checkout') {
     return [
       { label: 'Pickup', status: 'completed' },
       { label: 'Account', status: 'completed' },
-      { label: 'Review', status: 'active' },
+      { label: 'Review', status: isPlacingOrder ? 'completed' : 'active' },
     ];
   }
 
@@ -31,6 +31,6 @@ function getSteps(pathname: string, isReadyForCheckout: boolean): CheckoutStep[]
 export function CheckoutFlowHeader() {
   const pathname = usePathname();
   const cart = useCart();
-  const steps = getSteps(pathname, cart.isReadyForCheckout);
+  const steps = getSteps(pathname, cart.isReadyForCheckout, cart.isPlacingOrder);
   return <CheckoutHeader steps={steps} />;
 }

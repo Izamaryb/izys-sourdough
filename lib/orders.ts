@@ -8,7 +8,7 @@ import {
   releaseBakeSessionCapacity,
   reserveBakeSessionCapacity,
 } from './bakeSessions';
-import { isVacationModeActive } from './settings';
+import { getAcceptedPaymentMethods, isVacationModeActive } from './settings';
 import type { PaymentMethod } from '@/types/checkout';
 
 function toPrismaPaymentMethod(method: PaymentMethod): PaymentMethodType {
@@ -108,6 +108,13 @@ export class VacationModeActiveError extends Error {
   }
 }
 
+export class PaymentMethodNotAcceptedError extends Error {
+  constructor(paymentMethod: PaymentMethod) {
+    super(`The payment method "${paymentMethod}" is not currently accepted.`);
+    this.name = 'PaymentMethodNotAcceptedError';
+  }
+}
+
 function getTimeZoneOffsetMinutes(date: Date, timeZone: string): number {
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone,
@@ -171,6 +178,11 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderConfirm
 
   if (await isVacationModeActive(pickupDate)) {
     throw new VacationModeActiveError(pickupDate);
+  }
+
+  const acceptedPaymentMethods = await getAcceptedPaymentMethods();
+  if (!acceptedPaymentMethods[paymentMethod]) {
+    throw new PaymentMethodNotAcceptedError(paymentMethod);
   }
 
   const confirmation = await prisma.$transaction(async (tx: PrismaTransaction) => {

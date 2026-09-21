@@ -51,6 +51,8 @@ export type CartContextValue = CartState &
   CartComputedState &
   CartValidationState & {
     isCartDrawerOpen: boolean;
+    isPlacingOrder: boolean;
+    setIsPlacingOrder: (isPlacingOrder: boolean) => void;
     openCartDrawer: () => void;
     closeCartDrawer: () => void;
     cartIconRef: RefObject<HTMLButtonElement>;

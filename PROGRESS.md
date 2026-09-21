@@ -47,8 +47,8 @@ Status legend: ✅ Done · 🟡 Partial · ⬜ Not Started
 - [x] **Admin authentication is implemented** (`middleware.ts`, `lib/adminSession.ts`,
       `/admin/login`) — **docs said "pending auth", actually done**
 - [x] Product CRUD, bake session CRUD, order status/payment updates
-- [x] Settings page exists (`app/admin/settings/page.tsx`) — verify vacation-mode + payment-method
-      toggle behavior still needs a manual check-through
+- [x] Settings page exists (`app/admin/settings/page.tsx`) — vacation-mode + payment-method toggle
+      behavior verified 2026-09-21 (see Code review notes below)
 - [x] Customer password reset flow (`app/api/customers/reset-password/route.ts`) — extra, not in
       original plan docs
 
@@ -70,7 +70,7 @@ Status legend: ✅ Done · 🟡 Partial · ⬜ Not Started
 - [~] Sentry DSN configured in production — **deferred**, currently no-ops
 - [~] Twilio SMS configured in production (currently no-ops, console-log only) — **deferred**
 - [x] `ADMIN_NOTIFICATION_EMAIL` set in Vercel env vars
-- [ ] Run through pre-launch verification checklist end-to-end on the deployed site:
+- [x] Run through pre-launch verification checklist end-to-end on the deployed site:
   - [x] Products load / `/api/products` works in production (verified 2026-09-15 post-fix)
   - [x] Admin login/session works in production (verified 2026-09-15 post-fix)
   - [x] Guest checkout works — **verified on production 2026-09-17**: placed real order (Classic
@@ -105,6 +105,28 @@ Status legend: ✅ Done · 🟡 Partial · ⬜ Not Started
       `secure: NODE_ENV === 'production'`, `sameSite: 'lax'`. Confirmed correct; satisfies the
       "secure cookies over HTTPS" checklist item by code inspection.
 
+## Code review notes (2026-09-21)
+
+- [x] Verified vacation-mode enforcement is correct: `lib/orders.ts` (`createOrder`),
+      `lib/pickupSlots.ts` (slot availability + reservation), and
+      `app/api/admin/bake-sessions/route.ts` (blocks creating sessions in the vacation range) all
+      call `isVacationModeActive`. No issues found.
+- [x] **Found and fixed a real bug**: the admin Settings page's "Accepted Payment Methods" toggles
+      (`app/admin/settings/page.tsx`) were saved to the DB via `lib/settings.ts` but never actually
+      read anywhere — checkout (`app/checkout/page.tsx`) had a hardcoded list of all 3 payment
+      options, and `app/api/orders/route.ts` only validated that the payment method was one of the
+      3 known enum values, not that it was currently *accepted*. Disabling a payment method in
+      admin had zero effect; customers could still select and submit orders with it.
+  - **Fix**: added `PaymentMethodNotAcceptedError` + a check in `lib/orders.ts:createOrder` (mirrors
+    the existing `VacationModeActiveError` pattern), handled in `app/api/orders/route.ts` (409).
+    Added a public `GET /api/settings/payment-methods` route (mirrors `/api/settings/vacation-mode`)
+    and `lib/paymentMethodsApi.ts` fetch helper. Checkout page now fetches accepted methods on
+    mount, filters the radio options to only accepted ones, and resets the selected method if it
+    becomes unavailable.
+  - Verified with `npx tsc --noEmit` (passes). Manual verification still recommended: disable a
+    payment method in `/admin/settings`, confirm it disappears from checkout, and confirm a direct
+    API POST to `/api/orders` with that method returns 409.
+
 ## Production deploy pipeline bug found & fixed (2026-09-17/18)
 
 - **Bug**: `package.json` had no `postinstall`/build step running `prisma generate`. Vercel's build
@@ -136,7 +158,10 @@ Status legend: ✅ Done · 🟡 Partial · ⬜ Not Started
 2. ~~Decide whether Twilio / admin-notification email should be turned on~~ — **Twilio deferred,
    admin-notification email turned on** (set `ADMIN_NOTIFICATION_EMAIL` in `.env.local` + Vercel).
 3. ~~Verify production env vars are set in the hosting provider~~ — **done 2026-09-15**, see Task 6.
-4. Place a real guest test order on **production** (`https://izys-sourdough.vercel.app`) to verify
-   checkout, capacity tracking, pickup slot reservation, and email all work against the live Neon DB.
-5. Test registered-customer checkout/login and full admin CRUD in production.
-6. Update this file as items are completed or new gaps are found.
+4. ~~Place a real guest test order on production~~ — **done 2026-09-17**, see Task 6.
+5. ~~Test registered-customer checkout/login and full admin CRUD in production~~ — **done
+   2026-09-17/18**, see Task 6.
+6. **Deploy the 2026-09-21 payment-method fix to production** (not yet deployed) and re-verify:
+   disable a payment method in `/admin/settings`, confirm it's hidden on checkout and rejected
+   (409) if posted directly to `/api/orders`.
+7. Update this file as items are completed or new gaps are found.

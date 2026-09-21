@@ -4,6 +4,7 @@ import { logError } from '@/lib/logger';
 import {
   createOrder,
   getOrders,
+  PaymentMethodNotAcceptedError,
   PreorderCutoffPassedError,
   VacationModeActiveError,
   type CreateOrderInput,
@@ -156,6 +157,10 @@ export async function POST(request: Request) {
     }
 
     if (error instanceof VacationModeActiveError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
+
+    if (error instanceof PaymentMethodNotAcceptedError) {
       return NextResponse.json({ error: error.message }, { status: 409 });
     }
 

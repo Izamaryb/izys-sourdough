@@ -38,6 +38,7 @@ export function CartProvider({ children }: CartProviderProps) {
   const [cartState, setCartState] = useState<CartState>(emptyCartState);
   const [hasHydrated, setHasHydrated] = useState(false);
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [flyover, setFlyover] = useState<CartFlyoverItem | null>(null);
   const cartIconRef = useRef<HTMLButtonElement>(null);
 
@@ -195,6 +196,8 @@ export function CartProvider({ children }: CartProviderProps) {
       ...calculateCartTotals(cartState),
       ...getCartValidation(cartState),
       isCartDrawerOpen,
+      isPlacingOrder,
+      setIsPlacingOrder,
       openCartDrawer,
       closeCartDrawer,
       cartIconRef,
@@ -214,7 +217,7 @@ export function CartProvider({ children }: CartProviderProps) {
       clearPickupTime,
       getItemQuantity,
     };
-  }, [cartState, isCartDrawerOpen, flyover]);
+  }, [cartState, isCartDrawerOpen, isPlacingOrder, flyover]);
 
   return <CartContext.Provider value={contextValue}>{children}</CartContext.Provider>;
 }
