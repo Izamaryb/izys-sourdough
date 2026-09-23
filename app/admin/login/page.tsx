@@ -40,7 +40,7 @@ function AdminLoginForm() {
   }
 
   return (
-    <div className="flex min-h-svh items-center justify-center bg-background px-4">
+    <div className="admin-paper-bg flex items-center justify-center px-4">
       <form
         onSubmit={handleSubmit}
         className="grid w-full max-w-sm gap-6 rounded-lg border border-surfaceBorder bg-background p-6 shadow-card"

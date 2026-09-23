@@ -148,7 +148,7 @@ export default function AdminBakeSessionsPage() {
 
       <form
         onSubmit={handleCreate}
-        className="mb-8 grid gap-4 rounded-lg border border-surfaceBorder bg-background-soft p-4 md:grid-cols-4"
+        className="mb-8 grid gap-4 border-b border-button p-4 pb-8 md:grid-cols-4"
       >
         <InputField
           label="Bake date"
@@ -185,12 +185,12 @@ export default function AdminBakeSessionsPage() {
       {isLoading ? (
         <Text muted>Loading sessions…</Text>
       ) : (
-        <div className="grid gap-4">
+        <div>
           {sessions.map((session) => (
             <div
               key={session.id}
               className={classNames(
-                'flex flex-col gap-4 rounded-lg border border-surfaceBorder p-4 md:flex-row md:items-center md:justify-between',
+                'flex flex-col gap-4 border-b border-button py-6 last:border-b-0 md:flex-row md:items-center md:justify-between',
                 session.status === 'closed' && 'opacity-60',
               )}
             >

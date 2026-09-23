@@ -166,12 +166,12 @@ export default function AdminTestimonialsPage() {
       {isLoading ? (
         <Text muted>Loading testimonials…</Text>
       ) : (
-        <div className="grid gap-4">
+        <div>
           {testimonials.map((testimonial) => (
             <div
               key={testimonial.id}
               className={classNames(
-                'flex flex-col gap-4 rounded-lg border border-surfaceBorder p-4 md:flex-row md:items-center md:justify-between',
+                'flex flex-col gap-6 border-b border-button py-6 last:border-b-0 md:flex-row md:items-center md:justify-between',
                 !testimonial.isPublished && 'opacity-60',
               )}
             >

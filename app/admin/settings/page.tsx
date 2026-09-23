@@ -103,8 +103,8 @@ export default function AdminSettingsPage() {
       {isLoading ? (
         <Text muted>Loading settings…</Text>
       ) : (
-        <form onSubmit={handleSave} className="grid gap-8">
-          <section className="rounded-lg border border-surfaceBorder bg-background-soft p-6 shadow-card">
+        <form onSubmit={handleSave}>
+          <section className="border-b border-button py-6">
             <Heading level={3} className="mb-4">
               Accepted Payment Methods
             </Heading>
@@ -134,7 +134,7 @@ export default function AdminSettingsPage() {
             </div>
           </section>
 
-          <section className="rounded-lg border border-surfaceBorder bg-background-soft p-6 shadow-card">
+          <section className="border-b border-button py-6">
             <Heading level={3} className="mb-4">
               Vacation Mode
             </Heading>
@@ -180,7 +180,7 @@ export default function AdminSettingsPage() {
           {error ? <p className="text-small text-primary">{error}</p> : null}
           {success ? <p className="text-small text-button">Settings saved.</p> : null}
 
-          <div className="flex justify-end">
+          <div className="mt-6 flex justify-end">
             <Button type="submit" disabled={isSaving}>
               {isSaving ? 'Saving…' : 'Save Settings'}
             </Button>

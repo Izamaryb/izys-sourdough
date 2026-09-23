@@ -5,7 +5,7 @@
 :root {
   --color-primary: #4a3b2f;
   --color-background: #fdfbf8;
-  --color-background-soft: #fbf4ec;
+  --color-background-soft: #f4efe3;
   --color-secondary: #706351;
   --color-accent: #a2978a;
   --color-border: #d4ceb2;
@@ -61,6 +61,15 @@ a {
 }
 
 @layer base {
+  input[type='date'] {
+    accent-color: var(--color-button);
+  }
+
+  input[type='date']::-webkit-calendar-picker-indicator {
+    filter: invert(37%) sepia(8%) saturate(1500%) hue-rotate(10deg);
+    cursor: pointer;
+  }
+
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
   input:-webkit-autofill:focus,
@@ -137,5 +146,14 @@ a {
   .layout-container {
     width: min(100% - 32px, 1120px);
     margin-inline: auto;
+  }
+
+  .admin-paper-bg {
+    min-height: 100svh;
+    background-color: #c8d4c0;
+    background-image:
+      radial-gradient(ellipse at center, rgba(255, 255, 255, 0) 0%, rgba(74, 59, 47, 0.07) 100%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.08'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-blend-mode: normal, overlay;
   }
 }

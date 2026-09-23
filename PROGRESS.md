@@ -123,9 +123,9 @@ Status legend: ✅ Done · 🟡 Partial · ⬜ Not Started
     and `lib/paymentMethodsApi.ts` fetch helper. Checkout page now fetches accepted methods on
     mount, filters the radio options to only accepted ones, and resets the selected method if it
     becomes unavailable.
-  - Verified with `npx tsc --noEmit` (passes). Manual verification still recommended: disable a
-    payment method in `/admin/settings`, confirm it disappears from checkout, and confirm a direct
-    API POST to `/api/orders` with that method returns 409.
+  - Verified with `npx tsc --noEmit` (passes). **Deployed to production 2026-09-21** and manually
+    verified: disabled payment method correctly hidden on checkout, no flash of unfiltered options
+    on load.
 
 ## Production deploy pipeline bug found & fixed (2026-09-17/18)
 
@@ -161,7 +161,6 @@ Status legend: ✅ Done · 🟡 Partial · ⬜ Not Started
 4. ~~Place a real guest test order on production~~ — **done 2026-09-17**, see Task 6.
 5. ~~Test registered-customer checkout/login and full admin CRUD in production~~ — **done
    2026-09-17/18**, see Task 6.
-6. **Deploy the 2026-09-21 payment-method fix to production** (not yet deployed) and re-verify:
-   disable a payment method in `/admin/settings`, confirm it's hidden on checkout and rejected
-   (409) if posted directly to `/api/orders`.
+6. ~~Deploy the 2026-09-21 payment-method fix to production and re-verify~~ — **done 2026-09-21**,
+   verified on `izys-sourdough.vercel.app`.
 7. Update this file as items are completed or new gaps are found.

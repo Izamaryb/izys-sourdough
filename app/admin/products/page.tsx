@@ -215,12 +215,12 @@ export default function AdminProductsPage() {
       {isLoading ? (
         <Text muted>Loading products…</Text>
       ) : (
-        <div className="grid gap-4">
+        <div>
           {products.map((product) => (
             <div
               key={product.id}
               className={classNames(
-                'flex flex-col gap-4 rounded-lg border border-surfaceBorder p-4 md:flex-row md:items-center md:justify-between',
+                'flex flex-col gap-6 border-b border-button py-6 last:border-b-0 md:flex-row md:items-center md:justify-between',
                 !product.isActive && 'opacity-60',
               )}
             >
@@ -310,9 +310,11 @@ export default function AdminProductsPage() {
           />
           <SelectField
             label="Category"
+            name="categoryId"
             value={form.categoryId}
             options={categoryOptions}
-            onChange={(e) => setForm((prev) => ({ ...prev, categoryId: e.target.value }))}
+            onChange={(value) => setForm((prev) => ({ ...prev, categoryId: value }))}
+            required
           />
           <label className="flex items-center gap-2 font-body text-small text-primary">
             <input

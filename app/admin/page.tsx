@@ -62,7 +62,7 @@ function DashboardCard({
   return (
     <div
       className={classNames(
-        'rounded-lg border border-surfaceBorder bg-background-soft p-6 shadow-card',
+        'border-b border-button p-6',
         className,
       )}
     >
@@ -83,8 +83,8 @@ export default async function AdminDashboardPage() {
   return (
     <div>
       <p className="mb-6 font-body text-small text-secondary">{today}</p>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <DashboardCard title="Customer Metrics" className="lg:col-span-1">
+      <div>
+          <DashboardCard title="Customer Metrics">
             <dl className="grid gap-4 sm:grid-cols-3">
               <div>
                 <dt className="text-small text-secondary">Total</dt>
@@ -101,7 +101,7 @@ export default async function AdminDashboardPage() {
             </dl>
           </DashboardCard>
 
-          <DashboardCard title="Production Summary" className="md:col-span-2 lg:col-span-2">
+          <DashboardCard title="Production Summary">
             {summary.production.items.length === 0 ? (
               <EmptyState message="No production totals for today." />
             ) : (
@@ -118,13 +118,13 @@ export default async function AdminDashboardPage() {
                     </p>
                   ) : null}
                 </div>
-                <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                <ul className="space-y-2">
                   {summary.production.items.map((item) => (
-                    <li
-                      key={item.productName}
-                      className="flex items-center justify-between rounded-md border border-surfaceBorder bg-background px-4 py-2"
-                    >
-                      <span className="font-body text-body">{item.productName}</span>
+                    <li key={item.productName} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="text-secondary">•</span>
+                        <span className="font-body text-body">{item.productName}</span>
+                      </div>
                       <span className="font-heading text-h3">{item.totalUnits}</span>
                     </li>
                   ))}
@@ -132,25 +132,23 @@ export default async function AdminDashboardPage() {
               </>
             )}
           </DashboardCard>
-        </div>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-2">
           <DashboardCard title="Today's Orders">
             {summary.orders.length === 0 ? (
               <EmptyState message="No orders for today yet." />
             ) : (
-              <ul className="space-y-4">
+              <ul>
                 {summary.orders.map((order) => (
                   <li
                     key={order.id}
-                    className="rounded-md border border-surfaceBorder bg-background p-4"
+                    className="border-b border-button py-4 last:border-b-0"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
-                        <p className="font-body text-small font-medium text-secondary">
+                        <p className="font-heading text-h3 font-bold text-primary">
                           Order #{formatShortOrderId(order.id)}
                         </p>
-                        <p className="font-body text-body text-primary">
+                        <p className="font-body text-body text-secondary">
                           {order.customerName}
                         </p>
                       </div>
@@ -173,17 +171,17 @@ export default async function AdminDashboardPage() {
             {summary.pickupSchedule.length === 0 ? (
               <EmptyState message="No pickups scheduled for today." />
             ) : (
-              <ul className="space-y-4">
+              <ul>
                 {summary.pickupSchedule.map((slot) => (
                   <li key={slot.time}>
                     <h3 className="mb-2 font-heading text-h3 font-bold text-primary">
                       {slot.time}
                     </h3>
-                    <ul className="space-y-2">
+                    <ul>
                       {slot.orders.map((order) => (
                         <li
                           key={order.id}
-                          className="flex items-center justify-between rounded-md border border-surfaceBorder bg-background px-4 py-2"
+                          className="flex items-center justify-between border-b border-button py-2 last:border-b-0"
                         >
                           <div>
                             <p className="font-body text-body text-primary">
@@ -202,18 +200,16 @@ export default async function AdminDashboardPage() {
               </ul>
             )}
           </DashboardCard>
-        </div>
 
-        <div className="mt-6">
           <DashboardCard title="Best Sellers">
             {summary.bestSellers.length === 0 ? (
               <EmptyState message="No sales data yet." />
             ) : (
-              <ol className="space-y-2">
+              <ol>
                 {summary.bestSellers.map((item, index) => (
                   <li
                     key={item.productName}
-                    className="flex items-center justify-between rounded-md border border-surfaceBorder bg-background px-4 py-3"
+                    className="flex items-center justify-between border-b border-button py-3 last:border-b-0"
                   >
                     <div className="flex items-center gap-3">
                       <span className="flex h-8 w-8 items-center justify-center rounded-full bg-button/10 font-heading text-small font-bold text-button">

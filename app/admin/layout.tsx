@@ -28,7 +28,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="min-h-svh bg-background">
+    <div className="admin-paper-bg">
       <div className="layout-container py-8 md:py-12">
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <Heading level={1}>Admin</Heading>

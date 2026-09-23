@@ -102,7 +102,7 @@ export default function AdminOrdersPage() {
           label="Status"
           value={statusFilter}
           options={statusOptions}
-          onChange={(e) => setStatusFilter(e.target.value)}
+          onChange={(value) => setStatusFilter(value)}
         />
         <InputField
           label="Pickup date"
@@ -117,9 +117,9 @@ export default function AdminOrdersPage() {
       {isLoading ? (
         <Text muted>Loading orders…</Text>
       ) : (
-        <div className="grid gap-4">
+        <div>
           {orders.map((order) => (
-            <div key={order.id} className="rounded-lg border border-surfaceBorder bg-background-soft p-4">
+            <div key={order.id} className="border-b border-button py-6 last:border-b-0">
               <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
                 <div>
                   <Text className="font-medium">
@@ -148,18 +148,18 @@ export default function AdminOrdersPage() {
                 </div>
               </div>
 
-              <div className="mt-4 grid gap-4 border-t border-surfaceBorder pt-4 md:grid-cols-2">
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <SelectField
                   label="Order status"
                   value={order.status}
                   options={statusOptions.filter((o) => o.value !== '')}
-                  onChange={(e) => updateOrderStatus(order, e.target.value as OrderStatus)}
+                  onChange={(value) => updateOrderStatus(order, value as OrderStatus)}
                 />
                 <SelectField
                   label="Payment status"
                   value={order.paymentStatus}
                   options={paymentStatuses.map((status) => ({ value: status, label: status }))}
-                  onChange={(e) => updatePaymentStatus(order, e.target.value as PaymentStatus)}
+                  onChange={(value) => updatePaymentStatus(order, value as PaymentStatus)}
                 />
               </div>
             </div>
